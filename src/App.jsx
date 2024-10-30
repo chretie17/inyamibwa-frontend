@@ -10,6 +10,12 @@ import Navbar from './components/Navbar';
 import { Box } from '@mui/material';
 import Trainings from './pages/Trainings';
 import Schedule from './pages/Schedule';
+import Attendance from './pages/Attendance';
+import Qualifications from './pages/Qualifications';
+import AdminAttendance from './pages/AdminAttendance';
+import AdminQualifications from './pages/AdminQualifications';
+import PublicBookings from './public/PublicBookings';
+import AdminBookings from './pages/AdminBookings';
 
 // Layout component directly inside App.jsx
 const Layout = ({ children }) => {
@@ -37,6 +43,8 @@ const App = () => {
                 {/* Public routes without Layout */}
                 <Route path="/" element={<HomePage />} />
                 <Route path="/login" element={<Login />} />
+                <Route path="/book-now" element={<PublicBookings />} />
+
 
                 {/* Protected routes with Layout for admin and trainer */}
                 <Route
@@ -44,6 +52,14 @@ const App = () => {
                     element={
                         <Layout>
                             <Dashboard />
+                        </Layout>
+                    }
+                />
+                <Route
+                    path="/adminbookings"
+                    element={
+                        <Layout>
+                            <AdminBookings />
                         </Layout>
                     }
                 />
@@ -68,6 +84,38 @@ const App = () => {
                     element={
                         <Layout>
                             <Schedule />
+                        </Layout>
+                    }
+                />
+                  <Route
+                    path="/attendance"
+                    element={
+                        <Layout>
+                            <Attendance />
+                        </Layout>
+                    }
+                />
+                  <Route
+                    path="/qualifications"
+                    element={
+                        <Layout>
+                            <Qualifications />
+                        </Layout>
+                    }
+                />
+                <Route
+                    path="/adminqualifications"
+                    element={
+                        <Layout>
+                            <AdminQualifications />
+                        </Layout>
+                    }
+                />
+                 <Route
+                    path="/adminattendance"
+                    element={
+                        <Layout>
+                            <AdminAttendance />
                         </Layout>
                     }
                 />

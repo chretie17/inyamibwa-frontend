@@ -18,6 +18,7 @@ import {
     IconButton,
 } from '@mui/material';
 import { Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import styled from 'styled-components';
 import api from '../api';
 
 const Schedule = () => {
@@ -79,27 +80,24 @@ const Schedule = () => {
     };
 
     // Save a new or edited event
-    // Frontend: Schedule.js (inside handleSaveEvent function)
+    const handleSaveEvent = async () => {
+        try {
+            const eventData = {
+                ...newEvent,
+                created_by: localStorage.getItem('userId') || ''  // Ensure created_by is set
+            };
 
-const handleSaveEvent = async () => {
-    try {
-        const eventData = {
-            ...newEvent,
-            created_by: localStorage.getItem('userId') || ''  // Ensure created_by is set
-        };
-
-        if (selectedEvent) {
-            await api.put(`/schedule/${selectedEvent.id}`, eventData);
-        } else {
-            await api.post('/schedule', eventData);
+            if (selectedEvent) {
+                await api.put(`/schedule/${selectedEvent.id}`, eventData);
+            } else {
+                await api.post('/schedule', eventData);
+            }
+            fetchEvents();
+            handleCloseDialog();
+        } catch (error) {
+            console.error('Failed to save event:', error);
         }
-        fetchEvents();
-        handleCloseDialog();
-    } catch (error) {
-        console.error('Failed to save event:', error);
-    }
-};
-
+    };
 
     // Delete an event
     const handleDeleteEvent = async (id) => {
@@ -113,132 +111,177 @@ const handleSaveEvent = async () => {
 
     return (
         <Box sx={{ p: 3 }}>
-            <Typography variant="h4" gutterBottom>
-                Dance Troupe Schedule Management
-            </Typography>
-            <Button
-                variant="contained"
-                color="primary"
-                onClick={() => handleOpenDialog()}
-                sx={{ mb: 2 }}
-            >
-                Add New Event
-            </Button>
+            <Container>
+                <Typography variant="h4" sx={{ color: '#000000', fontWeight: 'bold' }} gutterBottom>
+                    Dance Troupe Schedule Management
+                </Typography>
+                <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={() => handleOpenDialog()}
+                    sx={{ mb: 2, backgroundColor: '#DAA520', color: '#FFFFFF', fontWeight: 'bold', '&:hover': { backgroundColor: '#B8860B' } }}
+                >
+                    Add New Event
+                </Button>
 
-            <TableContainer component={Paper}>
-                <Table>
-                    <TableHead>
-                        <TableRow>
-                            <TableCell>Title</TableCell>
-                            <TableCell>Description</TableCell>
-                            <TableCell>Venue</TableCell>
-                            <TableCell>Date</TableCell>
-                            <TableCell>Time</TableCell>
-                            <TableCell>Actions</TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {events.length > 0 ? (
-                            events.map((event) => (
-                                <TableRow key={event.id}>
-                                    <TableCell>{event.title}</TableCell>
-                                    <TableCell>{event.description}</TableCell>
-                                    <TableCell>{event.venue}</TableCell>
-                                    <TableCell>{new Date(event.date).toLocaleDateString()}</TableCell>
-                                    <TableCell>{event.time}</TableCell>
-                                    <TableCell>
-                                        <IconButton
-                                            onClick={() => handleOpenDialog(event)}
-                                            color="primary"
-                                        >
-                                            <EditIcon />
-                                        </IconButton>
-                                        <IconButton
-                                            onClick={() => handleDeleteEvent(event.id)}
-                                            color="error"
-                                        >
-                                            <DeleteIcon />
-                                        </IconButton>
-                                    </TableCell>
-                                </TableRow>
-                            ))
-                        ) : (
+                <TableContainer component={Paper} sx={{ boxShadow: '0px 8px 30px rgba(0, 0, 0, 0.7)', borderRadius: '16px', backgroundColor: '#FFFFFF', overflow: 'hidden' }}>
+                    <Table>
+                        <TableHead>
                             <TableRow>
-                                <TableCell colSpan={6} align="center">
-                                    No events found
-                                </TableCell>
+                                <StyledTableCell>Title</StyledTableCell>
+                                <StyledTableCell>Description</StyledTableCell>
+                                <StyledTableCell>Venue</StyledTableCell>
+                                <StyledTableCell>Date</StyledTableCell>
+                                <StyledTableCell>Time</StyledTableCell>
+                                <StyledTableCell>Actions</StyledTableCell>
                             </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
-            </TableContainer>
+                        </TableHead>
+                        <TableBody>
+                            {events.length > 0 ? (
+                                events.map((event) => (
+                                    <StyledTableRow key={event.id}>
+                                        <StyledTableCell>{event.title}</StyledTableCell>
+                                        <StyledTableCell>{event.description}</StyledTableCell>
+                                        <StyledTableCell>{event.venue}</StyledTableCell>
+                                        <StyledTableCell>{new Date(event.date).toLocaleDateString()}</StyledTableCell>
+                                        <StyledTableCell>{event.time}</StyledTableCell>
+                                        <StyledTableCell>
+                                            <IconButton
+                                                onClick={() => handleOpenDialog(event)}
+                                                sx={{ color: '#DAA520', '&:hover': { color: '#B8860B' } }}
+                                            >
+                                                <EditIcon />
+                                            </IconButton>
+                                            <IconButton
+                                                onClick={() => handleDeleteEvent(event.id)}
+                                                sx={{ color: '#ff4c4c', '&:hover': { color: '#ff0000' } }}
+                                            >
+                                                <DeleteIcon />
+                                            </IconButton>
+                                        </StyledTableCell>
+                                    </StyledTableRow>
+                                ))
+                            ) : (
+                                <StyledTableRow>
+                                    <StyledTableCell colSpan={6} align="center" sx={{ color: '#000000', fontStyle: 'italic' }}>
+                                        No events found
+                                    </StyledTableCell>
+                                </StyledTableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                </TableContainer>
 
-            {/* Add/Edit Event Dialog */}
-            <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-                <DialogTitle>{selectedEvent ? 'Edit Event' : 'Add New Event'}</DialogTitle>
-                <DialogContent>
-                    <TextField
-                        autoFocus
-                        margin="dense"
-                        label="Title"
-                        name="title"
-                        value={newEvent.title}
-                        onChange={handleInputChange}
-                        fullWidth
-                        variant="outlined"
-                    />
-                    <TextField
-                        margin="dense"
-                        label="Description"
-                        name="description"
-                        value={newEvent.description}
-                        onChange={handleInputChange}
-                        fullWidth
-                        variant="outlined"
-                    />
-                    <TextField
-                        margin="dense"
-                        label="Venue"
-                        name="venue"
-                        value={newEvent.venue}
-                        onChange={handleInputChange}
-                        fullWidth
-                        variant="outlined"
-                    />
-                    <TextField
-                        margin="dense"
-                        label="Date"
-                        name="date"
-                        type="date"
-                        value={newEvent.date}
-                        onChange={handleInputChange}
-                        fullWidth
-                        InputLabelProps={{ shrink: true }}
-                        variant="outlined"
-                    />
-                    <TextField
-                        margin="dense"
-                        label="Time"
-                        name="time"
-                        type="time"
-                        value={newEvent.time}
-                        onChange={handleInputChange}
-                        fullWidth
-                        InputLabelProps={{ shrink: true }}
-                        variant="outlined"
-                    />
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={handleCloseDialog} color="secondary">
-                        Cancel
-                    </Button>
-                    <Button onClick={handleSaveEvent} color="primary">
-                        {selectedEvent ? 'Update' : 'Save'}
-                    </Button>
-                </DialogActions>
-            </Dialog>
+                {/* Add/Edit Event Dialog */}
+                <StyledDialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
+                    <DialogTitle sx={{ color: '#000000' }}>{selectedEvent ? 'Edit Event' : 'Add New Event'}</DialogTitle>
+                    <DialogContent>
+                        <TextField
+                            autoFocus
+                            margin="dense"
+                            label="Title"
+                            name="title"
+                            value={newEvent.title}
+                            onChange={handleInputChange}
+                            fullWidth
+                            variant="outlined"
+                            sx={{ mb: 2, backgroundColor: '#FFFFFF', borderRadius: '8px', input: { color: '#000000', fontSize: '1.1rem' } }}
+                        />
+                        <TextField
+                            margin="dense"
+                            label="Description"
+                            name="description"
+                            value={newEvent.description}
+                            onChange={handleInputChange}
+                            fullWidth
+                            variant="outlined"
+                            sx={{ mb: 2, backgroundColor: '#FFFFFF', borderRadius: '8px', input: { color: '#000000', fontSize: '1.1rem' } }}
+                        />
+                        <TextField
+                            margin="dense"
+                            label="Venue"
+                            name="venue"
+                            value={newEvent.venue}
+                            onChange={handleInputChange}
+                            fullWidth
+                            variant="outlined"
+                            sx={{ mb: 2, backgroundColor: '#FFFFFF', borderRadius: '8px', input: { color: '#000000', fontSize: '1.1rem' } }}
+                        />
+                        <TextField
+                            margin="dense"
+                            label="Date"
+                            name="date"
+                            type="date"
+                            value={newEvent.date}
+                            onChange={handleInputChange}
+                            fullWidth
+                            InputLabelProps={{ shrink: true }}
+                            variant="outlined"
+                            sx={{ mb: 2, backgroundColor: '#FFFFFF', borderRadius: '8px', input: { color: '#000000', fontSize: '1.1rem' } }}
+                        />
+                        <TextField
+                            margin="dense"
+                            label="Time"
+                            name="time"
+                            type="time"
+                            value={newEvent.time}
+                            onChange={handleInputChange}
+                            fullWidth
+                            InputLabelProps={{ shrink: true }}
+                            variant="outlined"
+                            sx={{ mb: 2, backgroundColor: '#FFFFFF', borderRadius: '8px', input: { color: '#000000', fontSize: '1.1rem' } }}
+                        />
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={handleCloseDialog} sx={{ color: '#ff4c4c', fontWeight: 'bold', fontSize: '1rem' }}>
+                            Cancel
+                        </Button>
+                        <Button onClick={handleSaveEvent} sx={{ backgroundColor: '#DAA520', color: '#FFFFFF', fontWeight: 'bold', fontSize: '1rem', '&:hover': { backgroundColor: '#B8860B' } }}>
+                            {selectedEvent ? 'Update' : 'Save'}
+                        </Button>
+                    </DialogActions>
+                </StyledDialog>
+            </Container>
         </Box>
     );
 };
 
 export default Schedule;
+
+const Container = styled(Box)`
+  background-color: #FFFFFF;
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0px 8px 30px rgba(0, 0, 0, 0.7);
+  color: #000000;
+`;
+
+const StyledTableCell = styled(TableCell)`
+  color: #000000;
+  font-weight: bold;
+  font-size: 1.2rem;
+  border-bottom: 2px solid #4a4a4a;
+  padding: 24px;
+  background-color: #f5f5f5;
+`;
+
+const StyledTableRow = styled(TableRow)`
+  &:nth-of-type(odd) {
+    background-color: #f9f9f9;
+  }
+  &:nth-of-type(even) {
+    background-color: #ffffff;
+  }
+  &:hover {
+    background-color: #e6e6e6;
+  }
+`;
+
+const StyledDialog = styled(Dialog)`
+  .MuiDialog-paper {
+    background-color: #FFFFFF;
+    color: #000000;
+    border-radius: 16px;
+    box-shadow: 0px 8px 30px rgba(0, 0, 0, 0.9);
+  }
+`;
