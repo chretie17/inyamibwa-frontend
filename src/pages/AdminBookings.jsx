@@ -1,5 +1,3 @@
-// src/pages/AdminBookings.js
-
 import React, { useState, useEffect } from 'react';
 import {
     Box,
@@ -66,6 +64,21 @@ const AdminBookings = () => {
         }
     };
 
+    // Approve or Reject a booking
+    const handleBookingAction = async (id, action) => {
+        try {
+            const response = await api.put(`/bookings/${action}/${id}`);
+            setSnackbar({ open: true, message: response.data.message, severity: 'success' });
+
+            // Refresh bookings list
+            const bookingsResponse = await api.get('/bookings');
+            setBookings(bookingsResponse.data);
+        } catch (error) {
+            setSnackbar({ open: true, message: `Failed to ${action} booking.`, severity: 'error' });
+            console.error(`Error ${action}ing booking:`, error);
+        }
+    };
+
     const handleCloseSnackbar = () => setSnackbar({ open: false, message: '', severity: '' });
 
     return (
@@ -87,7 +100,7 @@ const AdminBookings = () => {
                             {eventTypes.map((event) => (
                                 <TableRow key={event.id}>
                                     <TableCell>{event.event_type}</TableCell>
-                                    <TableCell>${event.fee}</TableCell>
+                                    <TableCell>Rwf{event.fee}</TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>
@@ -140,6 +153,8 @@ const AdminBookings = () => {
                             <TableCell>Event Time</TableCell>
                             <TableCell>Fee</TableCell>
                             <TableCell>Notes</TableCell>
+                            <TableCell>Status</TableCell>
+                            <TableCell>Actions</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -151,8 +166,31 @@ const AdminBookings = () => {
                                 <TableCell>{booking.event_type}</TableCell>
                                 <TableCell>{booking.event_date}</TableCell>
                                 <TableCell>{booking.event_time}</TableCell>
-                                <TableCell>${booking.fee}</TableCell>
+                                <TableCell>Rwf{booking.fee}</TableCell>
                                 <TableCell>{booking.additional_notes}</TableCell>
+                                <TableCell>{booking.status || 'pending'}</TableCell>
+                                <TableCell>
+                                    {console.log('Booking Status:', booking.status)} {/* Debugging log */}
+                                    {booking.status === 'pending' && (
+                                        <>
+                                            <Button
+                                                variant="contained"
+                                                color="success"
+                                                onClick={() => handleBookingAction(booking.id, 'approve')}
+                                                sx={{ mr: 1 }}
+                                            >
+                                                Approve
+                                            </Button>
+                                            <Button
+                                                variant="contained"
+                                                color="error"
+                                                onClick={() => handleBookingAction(booking.id, 'reject')}
+                                            >
+                                                Reject
+                                            </Button>
+                                        </>
+                                    )}
+                                </TableCell>
                             </TableRow>
                         ))}
                     </TableBody>
