@@ -1,4 +1,5 @@
 import React from 'react';
+import { NavLink } from 'react-router-dom';
 import { Drawer, List, ListItem, ListItemText, ListItemIcon, Divider, Box, Typography, Button } from '@mui/material';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import PeopleIcon from '@mui/icons-material/People';
@@ -7,8 +8,8 @@ import AssignmentIcon from '@mui/icons-material/Assignment';
 import ReportProblemIcon from '@mui/icons-material/ReportProblem';
 import LogoutIcon from '@mui/icons-material/Logout';
 import PersonIcon from '@mui/icons-material/Person';
-import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
+import CowImage from '../assets/inyam.jpg'; // Assuming the cow image is in the assets folder
 
 const StyledDrawer = styled(Drawer)`
   width: 280px;
@@ -17,7 +18,8 @@ const StyledDrawer = styled(Drawer)`
   .MuiDrawer-paper {
     width: 280px;
     box-sizing: border-box;
-    background: #1E1E2D;
+    background: linear-gradient(rgba(30, 30, 45, 0.9), rgba(30, 30, 45, 0.9)), url(${CowImage}) no-repeat center center;
+    background-size: cover;
     color: #fff;
     border-right: none;
     box-shadow: 4px 0 24px rgba(0, 0, 0, 0.25);
@@ -151,12 +153,6 @@ const StyledLogoutButton = styled(Button)`
 const Sidebar = () => {
   const userRole = localStorage.getItem('userRole');
   const username = localStorage.getItem('username');
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    localStorage.clear();
-    navigate('/login');
-  };
 
   return (
     <StyledDrawer variant="permanent">
@@ -174,7 +170,7 @@ const Sidebar = () => {
       <MenuSection>
         <SectionTitle>Main Menu</SectionTitle>
         <List>
-          <StyledListItem button onClick={() => navigate('/dashboard')}>
+          <StyledListItem button component={NavLink} to="/dashboard">
             <ListItemIcon><DashboardIcon /></ListItemIcon>
             <ListItemText primary="Dashboard" />
           </StyledListItem>
@@ -182,51 +178,51 @@ const Sidebar = () => {
           {userRole === 'admin' && (
             <>
               <SectionTitle>Administration</SectionTitle>
-              <StyledListItem button onClick={() => navigate('/users')}>
+              <StyledListItem button component={NavLink} to="/users">
                 <ListItemIcon><PeopleIcon /></ListItemIcon>
                 <ListItemText primary="Users" />
               </StyledListItem>
-              <StyledListItem button onClick={() => navigate('/adminbookings')}>
-                <ListItemIcon><PeopleIcon /></ListItemIcon>
+              <StyledListItem button component={NavLink} to="/adminbookings">
+                <ListItemIcon><AssignmentIcon /></ListItemIcon>
                 <ListItemText primary="Bookings" />
               </StyledListItem>
-              <StyledListItem button onClick={() => navigate('/complaints')}>
+              <StyledListItem button component={NavLink} to="/complaints">
                 <ListItemIcon><ReportProblemIcon /></ListItemIcon>
                 <ListItemText primary="Complaints" />
               </StyledListItem>
-              <StyledListItem button onClick={() => navigate('/adminattendance')}>
-                <ListItemIcon><ReportProblemIcon /></ListItemIcon>
+              <StyledListItem button component={NavLink} to="/adminattendance">
+                <ListItemIcon><SchoolIcon /></ListItemIcon>
                 <ListItemText primary="Attendances" />
               </StyledListItem>
-              <StyledListItem button onClick={() => navigate('/adminqualifications')}>
-                <ListItemIcon><ReportProblemIcon /></ListItemIcon>
+              <StyledListItem button component={NavLink} to="/adminqualifications">
+                <ListItemIcon><SchoolIcon /></ListItemIcon>
                 <ListItemText primary="Qualifications" />
+              </StyledListItem>
+              <StyledListItem button component={NavLink} to="/reports">
+                <ListItemIcon><SchoolIcon /></ListItemIcon>
+                <ListItemText primary="Reports" />
               </StyledListItem>
             </>
           )}
 
           <SectionTitle>Training</SectionTitle>
           {userRole === 'trainer' && (
-            <StyledListItem button onClick={() => navigate('/attendance')}>
+            <StyledListItem button component={NavLink} to="/attendance">
               <ListItemIcon><SchoolIcon /></ListItemIcon>
               <ListItemText primary="Attendance" />
             </StyledListItem>
           )}
-          <StyledListItem button onClick={() => navigate('/trainings')}>
+          <StyledListItem button component={NavLink} to="/manage-trainings">
             <ListItemIcon><AssignmentIcon /></ListItemIcon>
             <ListItemText primary="Trainings" />
           </StyledListItem>
-          <StyledListItem button onClick={() => navigate('/Qualifications')}>
+          <StyledListItem button component={NavLink} to="/qualifications">
             <ListItemIcon><AssignmentIcon /></ListItemIcon>
             <ListItemText primary="Qualifications" />
           </StyledListItem>
-          <StyledListItem button onClick={() => navigate('/schedule')}>
+          <StyledListItem button component={NavLink} to="/schedule">
             <ListItemIcon><AssignmentIcon /></ListItemIcon>
             <ListItemText primary="Schedule" />
-          </StyledListItem>
-          <StyledListItem button onClick={() => navigate('/attendance')}>
-            <ListItemIcon><AssignmentIcon /></ListItemIcon>
-            <ListItemText primary="Attendance" />
           </StyledListItem>
         </List>
       </MenuSection>
@@ -245,7 +241,7 @@ const Sidebar = () => {
         <StyledLogoutButton
           variant="contained"
           startIcon={<LogoutIcon />}
-          onClick={handleLogout}
+          component={NavLink} to="/login"
           fullWidth
         >
           Logout

@@ -5,18 +5,19 @@ import api from '../api';
 
 const Profile = () => {
     const [user, setUser] = useState({});
+    const userId = localStorage.getItem('userId'); // Retrieve userId from local storage
 
     useEffect(() => {
         const fetchProfile = async () => {
             try {
-                const response = await api.get('/public/profile');
+                const response = await api.get('/public/profile', { params: { userId } });
                 setUser(response.data);
             } catch (error) {
                 console.error('Error fetching profile:', error);
             }
         };
         fetchProfile();
-    }, []);
+    }, [userId]);
 
     return (
         <Box sx={{ p: 3 }}>

@@ -19,6 +19,9 @@ import PublicBookings from './public/PublicBookings';
 import AdminBookings from './pages/AdminBookings';
 import Profile from './public/Profile';
 import Complaints from './public/Complaints';
+import AdminComplaints from './pages/Complaints';
+import ViewComplaints from './public/Complaints';
+import Report from './pages/Reports';
 
 
 // Layout component to conditionally render Sidebar or Navbar
@@ -86,6 +89,14 @@ const App = () => {
                         </Layout>
                     }
                 />
+                 <Route
+                    path="/reports"
+                    element={
+                        <Layout>
+                            <Report />
+                        </Layout>
+                    }
+                />
                 <Route
                     path="/user-trainings"
                     element={
@@ -143,10 +154,18 @@ const App = () => {
                     }
                 />
                 <Route
+                    path="/complaints"
+                    element={
+                        <Layout>
+                            <AdminComplaints />
+                        </Layout>
+                    }
+                />
+                <Route
                     path="/complaint"
                     element={
                         <Layout>
-                            <Complaints />
+                            <ViewComplaints />
                         </Layout>
                     }
                 />
