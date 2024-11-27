@@ -1,253 +1,213 @@
-import React from 'react';
-import { NavLink } from 'react-router-dom';
-import { Drawer, List, ListItem, ListItemText, ListItemIcon, Divider, Box, Typography, Button } from '@mui/material';
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import PeopleIcon from '@mui/icons-material/People';
-import SchoolIcon from '@mui/icons-material/School';
-import AssignmentIcon from '@mui/icons-material/Assignment';
-import ReportProblemIcon from '@mui/icons-material/ReportProblem';
-import LogoutIcon from '@mui/icons-material/Logout';
-import PersonIcon from '@mui/icons-material/Person';
-import styled from 'styled-components';
-import CowImage from '../assets/inyam.jpg'; // Assuming the cow image is in the assets folder
-
-const StyledDrawer = styled(Drawer)`
-  width: 280px;
-  flex-shrink: 0;
-
-  .MuiDrawer-paper {
-    width: 280px;
-    box-sizing: border-box;
-    background: linear-gradient(rgba(30, 30, 45, 0.9), rgba(30, 30, 45, 0.9)), url(${CowImage}) no-repeat center center;
-    background-size: cover;
-    color: #fff;
-    border-right: none;
-    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.25);
-  }
-`;
-
-const BrandContainer = styled(Box)`
-  background: linear-gradient(180deg, #2C2C40 0%, #1E1E2D 100%);
-  padding: 2rem 1.5rem;
-  text-align: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-`;
-
-const Logo = styled(Typography)`
-  font-size: 2.2rem;
-  font-weight: 700;
-  color: #C9B037;
-  letter-spacing: 1px;
-  margin-bottom: 0.5rem;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  font-family: 'Montserrat', sans-serif;
-`;
-
-const ProfileSection = styled(Box)`
-  background: linear-gradient(135deg, #2C2C40 0%, #252536 100%);
-  padding: 1.5rem;
-  text-align: center;
-  position: relative;
-`;
-
-const UserAvatar = styled(Box)`
-  width: 80px;
-  height: 80px;
-  background: linear-gradient(135deg, #C9B037 0%, #D4AF37 100%);
-  border-radius: 50%;
-  margin: 0 auto 1rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 20px rgba(201, 176, 55, 0.3);
-
-  svg {
-    width: 40px;
-    height: 40px;
-    color: #1E1E2D;
-  }
-`;
-
-const UserName = styled(Typography)`
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: #fff;
-  margin-bottom: 0.25rem;
-`;
-
-const StyledListItem = styled(ListItem)`
-  margin: 4px 8px;
-  border-radius: 8px;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: linear-gradient(90deg, rgba(201, 176, 55, 0.15), rgba(201, 176, 55, 0.05));
-    transform: translateX(4px);
-  }
-
-  .MuiListItemIcon-root {
-    color: #C9B037;
-    min-width: 40px;
-    transition: all 0.2s ease;
-  }
-
-  &:hover .MuiListItemIcon-root {
-    color: #D4AF37;
-    transform: scale(1.1);
-  }
-
-  .MuiListItemText-primary {
-    color: #E0E0E0;
-    font-size: 0.95rem;
-    font-weight: 500;
-    letter-spacing: 0.3px;
-  }
-
-  &:hover .MuiListItemText-primary {
-    color: #fff;
-  }
-`;
-
-const MenuSection = styled(Box)`
-  padding: 1rem 0;
-  position: relative;
-`;
-
-const SectionTitle = styled(Typography)`
-  color: #8E8E9A;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  padding: 0 1.5rem;
-  margin: 1rem 0 0.5rem;
-`;
-
-const StyledLogoutButton = styled(Button)`
-  margin: 1rem;
-  padding: 0.75rem;
-  background: linear-gradient(135deg, #C9B037 0%, #D4AF37 100%);
-  color: #1E1E2D;
-  font-weight: 600;
-  border-radius: 8px;
-  text-transform: none;
-  font-size: 1rem;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(201, 176, 55, 0.2);
-
-  &:hover {
-    background: linear-gradient(135deg, #D4AF37 0%, #E5C547 100%);
-    box-shadow: 0 6px 16px rgba(201, 176, 55, 0.3);
-    transform: translateY(-1px);
-  }
-
-  .MuiButton-startIcon {
-    transition: transform 0.3s ease;
-  }
-
-  &:hover .MuiButton-startIcon {
-    transform: rotate(-180deg);
-  }
-`;
+import React, { useState, useEffect } from 'react';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { 
+  ChartPieIcon, 
+  UsersIcon, 
+  CalendarIcon, 
+  ClipboardIcon, 
+  FlagIcon, 
+  ExclamationTriangleIcon,
+  AcademicCapIcon,
+  ClockIcon,
+  ArrowLeftOnRectangleIcon,
+  Bars3Icon,
+  UserCircleIcon
+} from '@heroicons/react/24/outline';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const Sidebar = () => {
+  const [isOpen, setIsOpen] = useState(true);
+  const location = useLocation();
+  const navigate = useNavigate();
   const userRole = localStorage.getItem('userRole');
   const username = localStorage.getItem('username');
 
+  const toggleSidebar = () => setIsOpen(!isOpen);
+
+  const handleLogout = () => {
+    // Clear local storage and redirect to login
+    localStorage.clear();
+    navigate('/login');
+  };
+
+  const MenuItemLink = ({ icon: Icon, text, to, isActive }) => (
+    <NavLink 
+      to={to}
+      className={`
+        group flex items-center p-3 rounded-lg transition-all duration-300 
+        ${isActive 
+          ? 'bg-gradient-to-r from-amber-500/20 to-amber-500/10 text-white' 
+          : 'hover:bg-gray-700/50 text-gray-300 hover:text-white'
+        }
+      `}
+    >
+      <Icon 
+        className={`
+          w-6 h-6 mr-3 transition-all duration-300 
+          ${isActive 
+            ? 'text-amber-400 group-hover:scale-110' 
+            : 'text-gray-400 group-hover:text-amber-300 group-hover:scale-105'
+          }
+        `} 
+      />
+      <AnimatePresence>
+        {isOpen && (
+          <motion.span 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="text-sm font-medium truncate"
+          >
+            {text}
+          </motion.span>
+        )}
+      </AnimatePresence>
+    </NavLink>
+  );
+
+  const adminMenuItems = [
+    { icon: UsersIcon, text: 'Users', path: '/users' },
+    { icon: ClipboardIcon, text: 'Bookings', path: '/adminbookings' },
+    { icon: ExclamationTriangleIcon, text: 'Complaints', path: '/complaints' },
+    { icon: ClockIcon, text: 'Attendances', path: '/adminattendance' },
+    { icon: AcademicCapIcon, text: 'Qualifications', path: '/adminqualifications' },
+    { icon: FlagIcon, text: 'Reports', path: '/reports' }
+  ];
+
+  const trainingMenuItems = [
+    { icon: CalendarIcon, text: 'Schedule', path: '/schedule' },
+    { icon: AcademicCapIcon, text: 'Qualifications', path: '/qualifications' },
+    { icon: ClipboardIcon, text: 'Trainings', path: '/manage-trainings' }
+  ];
+
   return (
-    <StyledDrawer variant="permanent">
-      <BrandContainer>
-        <Logo>INYAMIBWA</Logo>
-      </BrandContainer>
-      
-      <ProfileSection>
-        <UserAvatar>
-          <PersonIcon />
-        </UserAvatar>
-        <UserName>{username}</UserName>
-      </ProfileSection>
+    <motion.div 
+      initial={{ width: isOpen ? '16rem' : '5rem' }}
+      animate={{ width: isOpen ? '16rem' : '5rem' }}
+      transition={{ type: 'tween' }}
+      className={`
+        fixed left-0 top-0 h-full bg-gray-900 
+        transition-all duration-300 shadow-2xl 
+        flex flex-col overflow-hidden
+      `}
+    >
+      {/* Sidebar Toggle */}
+      <motion.button 
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
+        onClick={toggleSidebar}
+        className="absolute top-4 right-4 text-gray-300 hover:text-white z-50"
+      >
+        <Bars3Icon className="w-6 h-6" />
+      </motion.button>
 
-      <MenuSection>
-        <SectionTitle>Main Menu</SectionTitle>
-        <List>
-          <StyledListItem button component={NavLink} to="/dashboard">
-            <ListItemIcon><DashboardIcon /></ListItemIcon>
-            <ListItemText primary="Dashboard" />
-          </StyledListItem>
-
-          {userRole === 'admin' && (
-            <>
-              <SectionTitle>Administration</SectionTitle>
-              <StyledListItem button component={NavLink} to="/users">
-                <ListItemIcon><PeopleIcon /></ListItemIcon>
-                <ListItemText primary="Users" />
-              </StyledListItem>
-              <StyledListItem button component={NavLink} to="/adminbookings">
-                <ListItemIcon><AssignmentIcon /></ListItemIcon>
-                <ListItemText primary="Bookings" />
-              </StyledListItem>
-              <StyledListItem button component={NavLink} to="/complaints">
-                <ListItemIcon><ReportProblemIcon /></ListItemIcon>
-                <ListItemText primary="Complaints" />
-              </StyledListItem>
-              <StyledListItem button component={NavLink} to="/adminattendance">
-                <ListItemIcon><SchoolIcon /></ListItemIcon>
-                <ListItemText primary="Attendances" />
-              </StyledListItem>
-              <StyledListItem button component={NavLink} to="/adminqualifications">
-                <ListItemIcon><SchoolIcon /></ListItemIcon>
-                <ListItemText primary="Qualifications" />
-              </StyledListItem>
-              <StyledListItem button component={NavLink} to="/reports">
-                <ListItemIcon><SchoolIcon /></ListItemIcon>
-                <ListItemText primary="Reports" />
-              </StyledListItem>
-            </>
-          )}
-
-          <SectionTitle>Training</SectionTitle>
-          {userRole === 'trainer' && (
-            <StyledListItem button component={NavLink} to="/attendance">
-              <ListItemIcon><SchoolIcon /></ListItemIcon>
-              <ListItemText primary="Attendance" />
-            </StyledListItem>
-          )}
-          <StyledListItem button component={NavLink} to="/manage-trainings">
-            <ListItemIcon><AssignmentIcon /></ListItemIcon>
-            <ListItemText primary="Trainings" />
-          </StyledListItem>
-          <StyledListItem button component={NavLink} to="/qualifications">
-            <ListItemIcon><AssignmentIcon /></ListItemIcon>
-            <ListItemText primary="Qualifications" />
-          </StyledListItem>
-          <StyledListItem button component={NavLink} to="/schedule">
-            <ListItemIcon><AssignmentIcon /></ListItemIcon>
-            <ListItemText primary="Schedule" />
-          </StyledListItem>
-        </List>
-      </MenuSection>
-
-      <Box sx={{ marginTop: 'auto', mb: 2 }}>
-        <SectionTitle>User Role</SectionTitle>
-        <Typography sx={{ 
-          color: '#C9B037', 
-          textAlign: 'center', 
-          fontSize: '0.9rem',
-          fontWeight: '500',
-          mb: 2
-        }}>
-          {userRole?.toUpperCase()}
-        </Typography>
-        <StyledLogoutButton
-          variant="contained"
-          startIcon={<LogoutIcon />}
-          component={NavLink} to="/login"
-          fullWidth
+      {/* Logo */}
+      <div className="p-6 text-center">
+        <motion.h1 
+          initial={{ opacity: isOpen ? 1 : 0 }}
+          animate={{ opacity: isOpen ? 1 : 0 }}
+          transition={{ duration: 0.3 }}
+          className="text-2xl font-bold text-amber-500"
         >
-          Logout
-        </StyledLogoutButton>
-      </Box>
-    </StyledDrawer>
+          INYAMIBWA
+        </motion.h1>
+      </div>
+
+      {/* Profile Section */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="flex flex-col items-center py-6"
+          >
+            <div className="bg-gradient-to-br from-amber-500 to-amber-600 p-1 rounded-full mb-3">
+              <UserCircleIcon className="w-16 h-16 text-gray-900 rounded-full" />
+            </div>
+            <h2 className="text-white font-semibold">{username}</h2>
+            <p className="text-xs text-amber-400 uppercase">
+              {userRole?.toUpperCase()}
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Navigation Menu */}
+      <nav className="flex-1 px-4 space-y-2 overflow-y-auto">
+        {/* Main Menu */}
+        <MenuItemLink 
+          icon={ChartPieIcon} 
+          text="Dashboard" 
+          to="/dashboard" 
+          isActive={location.pathname === '/dashboard'}
+        />
+
+        {/* Admin Section */}
+        {userRole === 'admin' && (
+          <>
+            {isOpen && (
+              <h3 className="text-xs text-gray-500 uppercase mt-4 mb-2 pl-3">
+                Administration
+              </h3>
+            )}
+            {adminMenuItems.map((item, index) => (
+              <MenuItemLink 
+                key={index}
+                icon={item.icon} 
+                text={item.text} 
+                to={item.path} 
+                isActive={location.pathname === item.path}
+              />
+            ))}
+          </>
+        )}
+
+        {/* Training Section */}
+        {isOpen && (
+          <h3 className="text-xs text-gray-500 uppercase mt-4 mb-2 pl-3">
+            Training
+          </h3>
+        )}
+        {userRole === 'trainer' && (
+          <MenuItemLink 
+            icon={ClockIcon} 
+            text="Attendance" 
+            to="/attendance" 
+            isActive={location.pathname === '/attendance'}
+          />
+        )}
+        {trainingMenuItems.map((item, index) => (
+          <MenuItemLink 
+            key={index}
+            icon={item.icon} 
+            text={item.text} 
+            to={item.path} 
+            isActive={location.pathname === item.path}
+          />
+        ))}
+      </nav>
+
+      {/* Logout Section */}
+      <div className="p-4">
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={handleLogout}
+          className={`
+            w-full flex items-center justify-center 
+            bg-gradient-to-r from-amber-500 to-amber-600 
+            text-gray-900 font-semibold 
+            py-3 rounded-lg 
+            transition-all duration-300 
+            hover:from-amber-600 hover:to-amber-700
+          `}
+        >
+          <ArrowLeftOnRectangleIcon className="w-5 h-5 mr-2" />
+          {isOpen && 'Logout'}
+        </motion.button>
+      </div>
+    </motion.div>
   );
 };
 

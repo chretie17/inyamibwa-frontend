@@ -1,4 +1,3 @@
-// src/App.jsx
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import HomePage from './pages/HomePage';
@@ -23,23 +22,24 @@ import AdminComplaints from './pages/Complaints';
 import ViewComplaints from './public/Complaints';
 import Report from './pages/Reports';
 
-
 // Layout component to conditionally render Sidebar or Navbar
 const Layout = ({ children }) => {
     const userRole = localStorage.getItem('userRole');
 
     return (
-        <Box sx={{ display: 'flex' }}>
-            {/* Show Sidebar for admin and trainer roles, Navbar for user role */}
-            {userRole === 'admin' || userRole === 'trainer' ? (
-                <Sidebar />
-            ) : (
-                userRole === 'user' && <UserNavbar /> // Show Navbar only for "user" role
-            )}
-            <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
-                {children}
-            </Box>
-        </Box>
+        <div className="flex h-screen overflow-hidden">
+            {/* Show Sidebar for admin and trainer roles */}
+            {(userRole === 'admin' || userRole === 'trainer') && <Sidebar />}
+            
+            <main className={`
+                flex-1 overflow-y-auto bg-gray-100 
+                ${userRole === 'admin' || userRole === 'trainer' ? 'ml-20 md:ml-64' : ''}
+            `}>
+                <div className="p-4 max-w-full">
+                    {children}
+                </div>
+            </main>
+        </div>
     );
 };
 
@@ -89,7 +89,7 @@ const App = () => {
                         </Layout>
                     }
                 />
-                 <Route
+                <Route
                     path="/reports"
                     element={
                         <Layout>
@@ -145,7 +145,7 @@ const App = () => {
                         </Layout>
                     }
                 />
-                 <Route
+                <Route
                     path="/profile"
                     element={
                         <Layout>
