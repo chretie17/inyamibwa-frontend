@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { FaUsers, FaClipboardCheck, FaBookOpen, FaCalendarAlt } from 'react-icons/fa';
 import { LineChart, BarChart, Bar, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
-import styled from 'styled-components';
-import scrollreveal from 'scrollreveal';
+import { Users, ClipboardCheck, BookOpen, CalendarDays, ArrowUp, ArrowDown } from 'lucide-react';
 import apiService from '../api';
 
 const AdminDashboard = () => {
@@ -21,173 +19,233 @@ const AdminDashboard = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    scrollreveal().reveal('.dashboard', { duration: 2000 });
     fetchDashboardData();
   }, []);
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  const formatTooltipDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
 
   const fetchDashboardData = async () => {
     try {
       const response = await apiService.get('/admin/dashboard');
-      setDashboardData(response.data);
+      // Format dates in the response data
+      const formattedData = {
+        ...response.data,
+        complaintsTrends: response.data.complaintsTrends.map(item => ({
+          ...item,
+          date: formatDate(item.date)
+        })),
+        trainingsUploadsOverTime: response.data.trainingsUploadsOverTime.map(item => ({
+          ...item,
+          date: formatDate(item.date)
+        }))
+      };
+      setDashboardData(formattedData);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
       setError('Failed to fetch dashboard data');
     }
   };
 
-  return (
-    <DashboardSection className="dashboard">
-      <h2>Admin Dashboard</h2>
-      {error && <ErrorBox>{error}</ErrorBox>}
-      <StatsRow>
-        <StatCard title="Total Complaints" value={dashboardData.totalComplaints} icon={<FaClipboardCheck />} />
-        <StatCard title="Resolved Complaints" value={dashboardData.resolvedComplaints} icon={<FaClipboardCheck />} />
-        <StatCard title="Pending Complaints" value={dashboardData.pendingComplaints} icon={<FaClipboardCheck />} />
-        <StatCard title="Total Bookings" value={dashboardData.totalBookings} icon={<FaCalendarAlt />} />
-        <StatCard title="Approved Bookings" value={dashboardData.approvedBookings} icon={<FaCalendarAlt />} />
-        <StatCard title="Total Trainings" value={dashboardData.totalTrainings} icon={<FaBookOpen />} />
-        <StatCard title="Total Events" value={dashboardData.totalEvents} icon={<FaCalendarAlt />} />
-      </StatsRow>
-      <ChartsRow>
-        <ComplaintsTrendsChart data={dashboardData.complaintsTrends} />
-        <BookingsByEventTypeChart data={dashboardData.bookingsByEventType} />
-        <TrainingUploadsOverTimeChart data={dashboardData.trainingsUploadsOverTime} />
-      </ChartsRow>
-    </DashboardSection>
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white/95 p-4 rounded-lg shadow-lg border border-amber-100">
+          <p className="text-sm font-medium text-amber-900">{formatTooltipDate(label)}</p>
+          {payload.map((entry, index) => (
+            <p key={index} className="text-sm text-gray-600">
+              <span className="font-medium">{entry.name}: </span>
+              {entry.value}
+            </p>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
+
+  const StatCard = ({ title, value, icon: Icon, trend, color }) => (
+    <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow duration-300">
+      <div className="flex items-start justify-between">
+        <div className="space-y-2">
+          <span className="text-gray-600 text-sm font-medium">{title}</span>
+          <div className="flex items-baseline space-x-2">
+            <h3 className="text-2xl font-bold text-gray-900">{value}</h3>
+            {trend && (
+              <span className={`flex items-center text-sm ${trend > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                {trend > 0 ? <ArrowUp size={16} /> : <ArrowDown size={16} />}
+                {Math.abs(trend)}%
+              </span>
+            )}
+          </div>
+        </div>
+        <div className={`p-3 rounded-lg ${color}`}>
+          <Icon size={24} className="text-white" />
+        </div>
+      </div>
+    </div>
   );
-};
-
-// Component for displaying statistics in a card layout
-const StatCard = ({ title, value, icon }) => (
-  <Card>
-    <CardIcon>{icon}</CardIcon>
-    <h3>{title}</h3>
-    <p>{value}</p>
-  </Card>
-);
-
-// Component for the Complaints Trends Chart
-const ComplaintsTrendsChart = ({ data }) => {
-  const formattedData = data.map(item => ({
-    ...item,
-    date: new Date(item.date).toLocaleDateString('en-GB') // Formats to DD/MM/YYYY
-  }));
-
-  return (
-    <Card>
-      <h3>Complaints Trends</h3>
-      <ResponsiveContainer width="100%" height={300}>
-        <LineChart data={formattedData}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="date" />
-          <YAxis />
-          <Tooltip />
-          <Legend />
-          <Line type="monotone" dataKey="count" stroke="#5B3F00" strokeWidth={2} dot={{ r: 3 }} />
-        </LineChart>
-      </ResponsiveContainer>
-    </Card>
-  );
-};
-
-// Component for Bookings by Event Type Chart
-const BookingsByEventTypeChart = ({ data }) => (
-  <Card>
-    <h3>Bookings by Event Type</h3>
-    <ResponsiveContainer width="100%" height={300}>
-      <BarChart data={data}>
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="event_type" />
-        <YAxis />
-        <Tooltip />
-        <Legend />
-        <Bar dataKey="count" fill="#5B3F00" barSize={30} />
-      </BarChart>
-    </ResponsiveContainer>
-  </Card>
-);
-
-// Component for Trainings Uploads Over Time Chart
-const TrainingUploadsOverTimeChart = ({ data }) => {
-  const formattedData = data.map(item => ({
-    ...item,
-    date: new Date(item.date).toLocaleDateString('en-GB') // Formats to DD/MM/YYYY
-  }));
 
   return (
-    <Card>
-      <h3>Training Uploads Over Time</h3>
-      <ResponsiveContainer width="100%" height={300}>
-        <LineChart data={formattedData}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="date" />
-          <YAxis />
-          <Tooltip />
-          <Legend />
-          <Line type="monotone" dataKey="count" stroke="#4A90E2" strokeWidth={2} dot={{ r: 3 }} />
-        </LineChart>
-      </ResponsiveContainer>
-    </Card>
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 to-amber-100 p-8">
+      <div className="max-w-7xl mx-auto space-y-8">
+        {/* Header */}
+        <div className="text-center">
+          <h1 className="text-4xl font-bold text-amber-900">Admin Dashboard</h1>
+          <p className="mt-2 text-amber-700">Overview of system activities and metrics</p>
+        </div>
+
+        {/* Error Display */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+            {error}
+          </div>
+        )}
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <StatCard
+            title="Total Complaints"
+            value={dashboardData.totalComplaints}
+            icon={ClipboardCheck}
+            trend={2.5}
+            color="bg-amber-900"
+          />
+          <StatCard
+            title="Resolved Complaints"
+            value={dashboardData.resolvedComplaints}
+            icon={ClipboardCheck}
+            trend={5.2}
+            color="bg-green-600"
+          />
+          <StatCard
+            title="Total Bookings"
+            value={dashboardData.totalBookings}
+            icon={CalendarDays}
+            trend={-1.5}
+            color="bg-blue-600"
+          />
+          <StatCard
+            title="Total Trainings"
+            value={dashboardData.totalTrainings}
+            icon={BookOpen}
+            trend={3.8}
+            color="bg-purple-600"
+          />
+        </div>
+
+        {/* Charts Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Complaints Trends */}
+          <div className="bg-white p-6 rounded-2xl shadow-lg">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Complaints Trends</h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={dashboardData.complaintsTrends}>
+                <defs>
+                  <linearGradient id="colorComplaints" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#78350F" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#78350F" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Tooltip content={<CustomTooltip />} />
+                <Legend />
+                <Line
+                  type="monotone"
+                  dataKey="count"
+                  stroke="#78350F"
+                  strokeWidth={3}
+                  dot={{ r: 4, fill: '#78350F' }}
+                  activeDot={{ r: 6 }}
+                  fill="url(#colorComplaints)"
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Bookings by Event Type */}
+          <div className="bg-white p-6 rounded-2xl shadow-lg">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Bookings by Event Type</h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={dashboardData.bookingsByEventType}>
+                <defs>
+                  <linearGradient id="colorBookings" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#78350F" stopOpacity={0.8}/>
+                    <stop offset="100%" stopColor="#78350F" stopOpacity={0.4}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                <XAxis dataKey="event_type" />
+                <YAxis />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    borderRadius: '8px',
+                    border: 'none',
+                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                  }}
+                />
+                <Legend />
+                <Bar 
+                  dataKey="count" 
+                  fill="url(#colorBookings)"
+                  radius={[4, 4, 0, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Training Uploads Over Time */}
+          <div className="bg-white p-6 rounded-2xl shadow-lg lg:col-span-2">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Training Uploads Over Time</h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={dashboardData.trainingsUploadsOverTime}>
+                <defs>
+                  <linearGradient id="colorTrainings" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#78350F" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#78350F" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Tooltip content={<CustomTooltip />} />
+                <Legend />
+                <Line
+                  type="monotone"
+                  dataKey="count"
+                  stroke="#78350F"
+                  strokeWidth={3}
+                  dot={{ r: 4, fill: '#78350F' }}
+                  activeDot={{ r: 6 }}
+                  fill="url(#colorTrainings)"
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
-
-// Styled Components for styling the dashboard layout
-const DashboardSection = styled.section`
-  padding: 2rem;
-  background-color: #f9fafb;
-  h2 {
-    font-size: 2rem;
-    color: #333;
-    margin-bottom: 2rem;
-    text-align: center;
-  }
-`;
-
-const StatsRow = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
-`;
-
-const ChartsRow = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 2rem;
-`;
-
-const Card = styled.div`
-  background-color: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  padding: 1.5rem;
-  text-align: center;
-  h3 {
-    color: #5B3F00;
-    font-weight: 600;
-    margin-bottom: 1rem;
-  }
-  p {
-    font-size: 2rem;
-    color: #333;
-    font-weight: bold;
-  }
-`;
-
-const CardIcon = styled.div`
-  font-size: 2rem;
-  color: #5B3F00;
-  margin-bottom: 0.5rem;
-`;
-
-const ErrorBox = styled.div`
-  color: #5B3F00;
-  background-color: #5B3F00;
-  padding: 1rem;
-  border-radius: 8px;
-  margin-bottom: 1rem;
-  text-align: center;
-  font-weight: bold;
-`;
 
 export default AdminDashboard;
