@@ -1,350 +1,285 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  Typography,
-  TextField,
-  Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  Snackbar,
-  Alert,
-  createTheme,
-  ThemeProvider,
-  Grid,
-  Chip
-} from '@mui/material';
 import { 
-  Report as ReportIcon, 
-  CheckCircle as ResolvedIcon, 
-  Pending as PendingIcon, 
-  Cancel as RejectedIcon,
-  ReportProblem as ReappealIcon
-} from '@mui/icons-material';
-import api from '../api';
-
-// Custom theme with elegant color palette
-const theme = createTheme({
-  palette: {
-    primary: {
-      main: '#5B3F00', // Rich brown
-      light: '#8B6B4F',
-      dark: '#3B2900'
-    },
-    secondary: {
-      main: '#8B6B4F', // Softer brown
-    },
-    background: {
-      default: '#FAF0E6', // Soft cream
-      paper: '#FFFFFF'
-    },
-    status: {
-      pending: '#FFA500', // Orange
-      resolved: '#4CAF50', // Green
-      rejected: '#F44336', // Red
-      reappealed: '#9C27B0' // Purple
-    }
-  },
-  typography: {
-    fontFamily: 'Roboto, Arial, sans-serif',
-  },
-  components: {
-    MuiPaper: {
-      styleOverrides: {
-        root: {
-          borderRadius: 16,
-          boxShadow: '0 10px 25px rgba(91,63,0,0.1)',
-          transition: 'all 0.3s ease'
-        }
-      }
-    },
-    MuiButton: {
-      styleOverrides: {
-        root: {
-          borderRadius: 12,
-          textTransform: 'none',
-          fontWeight: 600,
-          transition: 'all 0.3s ease'
-        }
-      }
-    }
-  }
-});
+    AlertCircle, 
+    CheckCircle, 
+    XCircle, 
+    RefreshCw, 
+    FileText 
+} from 'lucide-react';
+import apiService from '../api';
 
 const Complaints = () => {
-  const [complaints, setComplaints] = useState([]);
-  const [newComplaint, setNewComplaint] = useState('');
-  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: '' });
-  const userId = localStorage.getItem('userId');
+    const [complaints, setComplaints] = useState([]);
+    const [newComplaint, setNewComplaint] = useState('');
+    const [notification, setNotification] = useState({ 
+        show: false, 
+        message: '', 
+        type: '' 
+    });
+    const userId = localStorage.getItem('userId');
 
-  useEffect(() => {
+    useEffect(() => {
+        fetchComplaints();
+    }, [userId]);
+
     const fetchComplaints = async () => {
-      try {
-        const response = await api.get(`/complaints/user/${userId}`);
-        setComplaints(response.data);
-      } catch (error) {
-        console.error('Error fetching complaints:', error);
-      }
+        try {
+            const response = await apiService.get(`/complaints/user/${userId}`);
+            setComplaints(response.data);
+        } catch (error) {
+            showNotification('Failed to fetch complaints', 'error');
+        }
     };
-    fetchComplaints();
-  }, [userId]);
 
-  const handleSubmitComplaint = async () => {
-    if (!newComplaint.trim()) {
-      setSnackbar({ open: true, message: 'Please enter a complaint message.', severity: 'warning' });
-      return;
-    }
+    const showNotification = (message, type) => {
+        setNotification({ show: true, message, type });
+        setTimeout(() => {
+            setNotification({ show: false, message: '', type: '' });
+        }, 3000);
+    };
 
-    try {
-      await api.post('/complaints/file', { user_id: userId, complaint_text: newComplaint });
-      setSnackbar({ open: true, message: 'Complaint submitted successfully!', severity: 'success' });
-      setNewComplaint('');
-      setComplaints(prev => [...prev, { 
-        complaint_text: newComplaint, 
-        status: 'Pending', 
-        response: '',
-        created_at: new Date().toISOString()
-      }]);
-    } catch (error) {
-      setSnackbar({ open: true, message: 'Failed to submit complaint.', severity: 'error' });
-      console.error('Error submitting complaint:', error);
-    }
-  };
+    const handleSubmitComplaint = async () => {
+        if (!newComplaint.trim()) {
+            showNotification('Please enter a complaint message', 'warning');
+            return;
+        }
 
-  const handleReappeal = async (id) => {
-    try {
-      await api.post(`/complaints/reappeal/${id}`);
-      setSnackbar({ open: true, message: 'Reappeal submitted!', severity: 'success' });
-      setComplaints(prev => prev.map(comp => (comp.id === id ? { ...comp, status: 'Reappealed' } : comp)));
-    } catch (error) {
-      setSnackbar({ open: true, message: 'Failed to reappeal complaint.', severity: 'error' });
-      console.error('Error reappealing complaint:', error);
-    }
-  };
+        try {
+            await apiService.post('/complaints/file', { 
+                user_id: userId, 
+                complaint_text: newComplaint 
+            });
 
-  const handleCloseCase = async (id) => {
-    try {
-      await api.put(`/complaints/${id}`, { status: 'Closed' });
-      setSnackbar({ open: true, message: 'Case closed successfully!', severity: 'success' });
-      setComplaints(prev => prev.map(comp => (comp.id === id ? { ...comp, status: 'Closed' } : comp)));
-    } catch (error) {
-      setSnackbar({ open: true, message: 'Failed to close case.', severity: 'error' });
-      console.error('Error closing case:', error);
-    }
-  };
+            showNotification('Complaint submitted successfully', 'success');
+            setNewComplaint('');
+            
+            // Optimistically update the list
+            setComplaints(prev => [...prev, { 
+                complaint_text: newComplaint, 
+                status: 'Pending', 
+                response: '',
+                created_at: new Date().toISOString()
+            }]);
+        } catch (error) {
+            showNotification('Failed to submit complaint', 'error');
+        }
+    };
 
-  const handleCloseSnackbar = () => setSnackbar({ open: false, message: '', severity: '' });
+    const handleReappeal = async (id) => {
+        try {
+            await apiService.post(`/complaints/reappeal/${id}`);
+            showNotification('Reappeal submitted', 'success');
+            
+            setComplaints(prev => 
+                prev.map(comp => 
+                    comp.id === id ? { ...comp, status: 'Reappealed' } : comp
+                )
+            );
+        } catch (error) {
+            showNotification('Failed to reappeal complaint', 'error');
+        }
+    };
 
-  const getStatusIcon = (status) => {
-    switch(status) {
-      case 'Pending': return <PendingIcon color="warning" />;
-      case 'Resolved': return <ResolvedIcon color="success" />;
-      case 'Rejected': return <RejectedIcon color="error" />;
-      case 'Reappealed': return <ReappealIcon color="secondary" />;
-      default: return <ReportIcon />;
-    }
-  };
+    const handleCloseCase = async (id) => {
+        try {
+            await apiService.put(`/complaints/${id}`, { status: 'closed' });
+            showNotification('Case closed successfully', 'success');
+            
+            setComplaints(prev => 
+                prev.map(comp => 
+                    comp.id === id ? { ...comp, status: 'closed' } : comp
+                )
+            );
+        } catch (error) {
+            showNotification('Failed to close case', 'error');
+        }
+    };
 
-  const getStatusColor = (status) => {
-    switch(status) {
-      case 'Pending': return theme.palette.status.pending;
-      case 'Resolved': return theme.palette.status.resolved;
-      case 'Rejected': return theme.palette.status.rejected;
-      case 'Reappealed': return theme.palette.status.reappealed;
-      default: return theme.palette.primary.main;
-    }
-  };
+    const getStatusDetails = (status) => {
+        switch(status) {
+            case 'pending': 
+                return { 
+                    icon: <AlertCircle className="w-5 h-5 text-yellow-500" />, 
+                    color: 'bg-yellow-100 text-yellow-800' 
+                };
+            case 'resolved': 
+                return { 
+                    icon: <CheckCircle className="w-5 h-5 text-green-500" />, 
+                    color: 'bg-green-100 text-green-800' 
+                };
+            case 'rejected': 
+                return { 
+                    icon: <XCircle className="w-5 h-5 text-red-500" />, 
+                    color: 'bg-red-100 text-red-800' 
+                };
+            case 'reappealed': 
+                return { 
+                    icon: <RefreshCw className="w-5 h-5 text-purple-500" />, 
+                    color: 'bg-purple-100 text-purple-800' 
+                };
+            case 'closed':
+                  return { 
+                      icon: <XCircle className="w-5 h-5 text-gray-500" />, 
+                      color: 'bg-gray-100 text-gray-800' 
+                  };   
+            default: 
+                return { 
+                    icon: <FileText className="w-5 h-5 text-gray-500" />, 
+                    color: 'bg-gray-100 text-gray-800' 
+                };
+        }
+    };
 
-  return (
-    <ThemeProvider theme={theme}>
-      <Box sx={{ 
-        p: 4, 
-        backgroundColor: theme.palette.background.default,
-        minHeight: '100vh'
-      }}>
-        <Typography 
-          variant="h3" 
-          sx={{ 
-            mb: 4, 
-            color: theme.palette.primary.main, 
-            fontWeight: 'bold',
-            textAlign: 'center',
-            textShadow: '2px 2px 4px rgba(91,63,0,0.1)'
-          }}
-        >
-          Complaint Management
-        </Typography>
+    return (
+        <div className="min-h-screen bg-gradient-to-br from-amber-50 to-amber-100 py-12 px-4 sm:px-6 lg:px-8">
+            <div className="max-w-6xl mx-auto">
+                {/* Header */}
+                <div className="text-center mb-12">
+                    <h1 className="text-4xl font-bold text-amber-900 mb-4">
+                        Complaint Management
+                    </h1>
+                    <div className="h-1 w-24 bg-amber-600 mx-auto"></div>
+                </div>
 
-        <Grid container spacing={4}>
-          {/* New Complaint Section */}
-          <Grid item xs={12} md={4}>
-            <Paper 
-              elevation={6} 
-              sx={{ 
-                p: 3, 
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between'
-              }}
-            >
-              <Box>
-                <Typography 
-                  variant="h5" 
-                  gutterBottom 
-                  sx={{ 
-                    color: theme.palette.primary.main,
-                    fontWeight: 'bold',
-                    mb: 2
-                  }}
-                >
-                  <ReportIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-                  File a New Complaint
-                </Typography>
-                <TextField
-                  label="Complaint Details"
-                  value={newComplaint}
-                  onChange={(e) => setNewComplaint(e.target.value)}
-                  fullWidth
-                  multiline
-                  rows={4}
-                  variant="outlined"
-                  sx={{ mb: 2 }}
-                />
-              </Box>
-              <Button 
-                variant="contained" 
-                color="primary" 
-                onClick={handleSubmitComplaint}
-                fullWidth
-                sx={{ 
-                  mt: 2,
-                  py: 1.5
-                }}
-              >
-                Submit Complaint
-              </Button>
-            </Paper>
-          </Grid>
+                {/* Main Content Grid */}
+                <div className="grid md:grid-cols-3 gap-8">
+                    {/* New Complaint Section */}
+                    <div className="md:col-span-1 bg-white rounded-2xl shadow-xl p-6">
+                        <h2 className="text-2xl font-bold text-amber-900 mb-4 flex items-center">
+                            <FileText className="mr-3 text-amber-600" />
+                            File a Complaint
+                        </h2>
+                        <textarea
+                            className="w-full h-40 p-3 border border-amber-200 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none resize-none"
+                            placeholder="Describe your complaint..."
+                            value={newComplaint}
+                            onChange={(e) => setNewComplaint(e.target.value)}
+                        />
+                        <button
+                            onClick={handleSubmitComplaint}
+                            className="w-full mt-4 bg-amber-600 text-white py-3 rounded-lg hover:bg-amber-700 transition-colors"
+                        >
+                            Submit Complaint
+                        </button>
+                    </div>
 
-          {/* Existing Complaints Section */}
-          <Grid item xs={12} md={8}>
-            <Paper elevation={6}>
-              <Typography 
-                variant="h5" 
-                sx={{ 
-                  p: 3, 
-                  pb: 0,
-                  color: theme.palette.primary.main,
-                  fontWeight: 'bold'
-                }}
-              >
-                Previous Complaints
-              </Typography>
-              
-              {complaints.length === 0 ? (
-                <Box 
-                  sx={{ 
-                    p: 4, 
-                    textAlign: 'center', 
-                    color: theme.palette.text.secondary 
-                  }}
-                >
-                  <ReportIcon sx={{ fontSize: 60, opacity: 0.5, mb: 2 }} />
-                  <Typography variant="body1" sx={{ fontStyle: 'italic' }}>
-                    No complaints found. Your filed complaints will appear here.
-                  </Typography>
-                </Box>
-              ) : (
-                <TableContainer>
-                  <Table>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Complaint</TableCell>
-                        <TableCell>Status</TableCell>
-                        <TableCell>Response</TableCell>
-                        <TableCell>Actions</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {complaints.map((complaint) => (
-                        <TableRow key={complaint.id} hover>
-                          <TableCell>{complaint.complaint_text}</TableCell>
-                          <TableCell>
-                            <Chip
-                              icon={getStatusIcon(complaint.status)}
-                              label={complaint.status}
-                              sx={{ 
-                                backgroundColor: getStatusColor(complaint.status),
-                                color: 'white',
-                                fontWeight: 'bold'
-                              }}
-                            />
-                          </TableCell>
-                          <TableCell>{complaint.response || 'No response yet'}</TableCell>
-                          <TableCell>
-                            {(complaint.status === 'Resolved' || complaint.status === 'Rejected') && (
-                              <Box sx={{ display: 'flex', gap: 1 }}>
-                                <Button
-                                  variant="outlined"
-                                  color="secondary"
-                                  size="small"
-                                  onClick={() => handleReappeal(complaint.id)}
-                                >
-                                  Reappeal
-                                </Button>
-                                <Button
-                                  variant="outlined"
-                                  color="error"
-                                  size="small"
-                                  onClick={() => handleCloseCase(complaint.id)}
-                                >
-                                  Close Case
-                                </Button>
-                              </Box>
-                            )}
-                            {(complaint.status === 'Pending' || complaint.status === 'Reappealed') && (
-                              <Button
-                                variant="outlined"
-                                color="error"
-                                size="small"
-                                onClick={() => handleCloseCase(complaint.id)}
-                              >
-                                Close Case
-                              </Button>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              )}
-            </Paper>
-          </Grid>
-        </Grid>
+                    {/* Complaints List */}
+                    <div className="md:col-span-2 bg-white rounded-2xl shadow-xl">
+                        <div className="p-6 border-b border-amber-100">
+                            <h2 className="text-2xl font-bold text-amber-900">
+                                Previous Complaints
+                            </h2>
+                        </div>
 
-        <Snackbar 
-          open={snackbar.open} 
-          autoHideDuration={3000} 
-          onClose={handleCloseSnackbar}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-        >
-          <Alert 
-            onClose={handleCloseSnackbar} 
-            severity={snackbar.severity}
-            sx={{ width: '100%' }}
-          >
-            {snackbar.message}
-          </Alert>
-        </Snackbar>
-      </Box>
-    </ThemeProvider>
-  );
+                        {complaints.length === 0 ? (
+                            <div className="text-center py-12">
+                                <FileText className="mx-auto w-16 h-16 text-amber-300 mb-4" />
+                                <p className="text-gray-500">
+                                    No complaints found. Your filed complaints will appear here.
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="overflow-x-auto">
+                                <table className="w-full">
+                                    <thead className="bg-amber-50">
+                                        <tr>
+                                            <th className="px-6 py-3 text-left text-xs font-semibold text-amber-900">
+                                                Complaint
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-semibold text-amber-900">
+                                                Status
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-semibold text-amber-900">
+                                                Response
+                                            </th>
+                                            <th className="px-6 py-3 text-right text-xs font-semibold text-amber-900">
+                                                Actions
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-amber-100">
+                                        {complaints.map((complaint) => {
+                                            const { icon, color } = getStatusDetails(complaint.status);
+                                            return (
+                                                <tr 
+                                                    key={complaint.id} 
+                                                    className="hover:bg-amber-50 transition-colors duration-150"
+                                                >
+                                                    <td className="px-6 py-4 text-sm text-gray-900">
+                                                        {complaint.complaint_text}
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <span className={`
+                                                            inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium
+                                                            ${color}
+                                                        `}>
+                                                            {icon}
+                                                            {complaint.status}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-sm text-gray-600">
+                                                        {complaint.response || 'No response yet'}
+                                                    </td>
+                                                    <td className="px-6 py-4 text-right">
+                                                        {(complaint.status === 'resolved' || 
+                                                          complaint.status === 'rejected') && (
+                                                            <div className="flex justify-end space-x-2">
+                                                                <button
+                                                                    onClick={() => handleReappeal(complaint.id)}
+                                                                    className="px-3 py-1 bg-purple-500 text-white rounded-md text-xs hover:bg-purple-600 transition-colors"
+                                                                >
+                                                                    Reappeal
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => handleCloseCase(complaint.id)}
+                                                                    className="px-3 py-1 bg-red-500 text-white rounded-md text-xs hover:bg-red-600 transition-colors"
+                                                                >
+                                                                    Close
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                        {(complaint.status === 'pending' || 
+                                                          complaint.status === 'reappealed') && (
+                                                            <button
+                                                                onClick={() => handleCloseCase(complaint.id)}
+                                                                className="px-3 py-1 bg-red-500 text-white rounded-md text-xs hover:bg-red-600 transition-colors"
+                                                            >
+                                                                Close
+                                                            </button>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* Notification */}
+            {notification.show && (
+                <div className="fixed bottom-4 right-4 flex items-center">
+                    <div className={`
+                        px-6 py-3 rounded-lg shadow-lg
+                        ${notification.type === 'success' 
+                            ? 'bg-green-500' 
+                            : notification.type === 'error'
+                            ? 'bg-red-500'
+                            : 'bg-yellow-500'
+                        }
+                        text-white font-medium
+                        transform transition-all duration-500 ease-out
+                        animate-slide-in
+                    `}>
+                        {notification.message}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
 };
 
 export default Complaints;

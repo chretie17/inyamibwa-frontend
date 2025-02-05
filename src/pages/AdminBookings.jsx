@@ -1,121 +1,34 @@
 import React, { useState, useEffect } from 'react';
-import {
-    Box,
-    Typography,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TableRow,
-    Paper,
-    TextField,
-    Button,
-    Snackbar,
-    Alert,
-    Container,
-    Card,
-    CardContent,
-    CardHeader,
-} from '@mui/material';
-import { createTheme, ThemeProvider } from '@mui/material/styles';
+import { Calendar, Clock, Phone, Mail, Plus, Check, X, AlertCircle, CalendarDays } from 'lucide-react';
 import api from '../api';
-
-// Elegant Theme with Golden Accent
-const elegantTheme = createTheme({
-    typography: {
-        fontFamily: '"Neue Haas Grotesk", "Helvetica", "Arial", sans-serif',
-    },
-    palette: {
-        mode: 'light',
-        primary: {
-            main: '#CBAF37', // Golden accent color
-            contrastText: '#FFFFFF',
-        },
-        background: {
-            default: '#FFFFFF',
-            paper: '#FFFFFF',
-        },
-        text: {
-            primary: '#333333',
-            secondary: '#666666',
-        },
-        action: {
-            hover: 'rgba(203, 175, 55, 0.08)', // Soft golden hover
-        },
-    },
-    components: {
-        MuiCard: {
-            styleOverrides: {
-                root: {
-                    boxShadow: '0 8px 16px rgba(0,0,0,0.1)',
-                    borderRadius: 12,
-                    transition: 'all 0.3s ease',
-                    '&:hover': {
-                        transform: 'translateY(-5px)',
-                        boxShadow: '0 12px 20px rgba(0,0,0,0.15)',
-                    },
-                },
-            },
-        },
-        MuiTableCell: {
-            styleOverrides: {
-                head: {
-                    backgroundColor: '#F5F5F5',
-                    color: '#333333',
-                    fontWeight: 700,
-                    textTransform: 'uppercase',
-                    letterSpacing: '1px',
-                },
-            },
-        },
-        MuiButton: {
-            styleOverrides: {
-                root: {
-                    borderRadius: 8,
-                    textTransform: 'none',
-                    fontWeight: 600,
-                    padding: '10px 20px',
-                },
-            },
-        },
-        MuiTextField: {
-            styleOverrides: {
-                root: {
-                    '& label.Mui-focused': {
-                        color: '#CBAF37',
-                    },
-                    '& .MuiOutlinedInput-root': {
-                        '&.Mui-focused fieldset': {
-                            borderColor: '#CBAF37',
-                        },
-                    },
-                },
-            },
-        },
-    },
-});
 
 const AdminBookings = () => {
     const [bookings, setBookings] = useState([]);
     const [eventTypes, setEventTypes] = useState([]);
     const [newEventType, setNewEventType] = useState({ event_type: '', fee: '' });
-    const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: '' });
+    const [notification, setNotification] = useState({
+        show: false,
+        message: '',
+        type: ''
+    });
 
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const bookingsResponse = await api.get('/bookings');
-                const eventTypesResponse = await api.get('/bookings/event-types');
-                setBookings(bookingsResponse.data);
-                setEventTypes(eventTypesResponse.data);
-            } catch (error) {
-                setSnackbar({ open: true, message: 'Failed to fetch data.', severity: 'error' });
-                console.error('Error fetching data:', error);
-            }
-        };
         fetchData();
     }, []);
+
+    const fetchData = async () => {
+        try {
+            const [bookingsResponse, eventTypesResponse] = await Promise.all([
+                api.get('/bookings'),
+                api.get('/bookings/event-types')
+            ]);
+            setBookings(bookingsResponse.data);
+            setEventTypes(eventTypesResponse.data);
+        } catch (error) {
+            showNotification('Failed to fetch data.', 'error');
+            console.error('Error fetching data:', error);
+        }
+    };
 
     const handleEventTypeChange = (e) => {
         const { name, value } = e.target;
@@ -124,18 +37,17 @@ const AdminBookings = () => {
 
     const handleAddOrUpdateEventType = async () => {
         if (!newEventType.event_type || !newEventType.fee) {
-            setSnackbar({ open: true, message: 'Please fill out all fields.', severity: 'warning' });
+            showNotification('Please fill out all fields.', 'error');
             return;
         }
         try {
             await api.post('/bookings/event-types', newEventType);
-            setSnackbar({ open: true, message: 'Event type added successfully!', severity: 'success' });
+            showNotification('Event type added successfully!', 'success');
             setNewEventType({ event_type: '', fee: '' });
-
-            const eventTypesResponse = await api.get('/bookings/event-types');
-            setEventTypes(eventTypesResponse.data);
+            const response = await api.get('/bookings/event-types');
+            setEventTypes(response.data);
         } catch (error) {
-            setSnackbar({ open: true, message: 'Failed to add event type.', severity: 'error' });
+            showNotification('Failed to add event type.', 'error');
             console.error('Error adding event type:', error);
         }
     };
@@ -143,198 +55,289 @@ const AdminBookings = () => {
     const handleBookingAction = async (id, action) => {
         try {
             const response = await api.put(`/bookings/${action}/${id}`);
-            setSnackbar({ open: true, message: response.data.message, severity: 'success' });
-
+            showNotification(response.data.message, 'success');
             const bookingsResponse = await api.get('/bookings');
             setBookings(bookingsResponse.data);
         } catch (error) {
-            setSnackbar({ open: true, message: `Failed to ${action} booking.`, severity: 'error' });
+            showNotification(`Failed to ${action} booking.`, 'error');
             console.error(`Error ${action}ing booking:`, error);
         }
     };
 
-    const handleCloseSnackbar = () => setSnackbar({ open: false, message: '', severity: '' });
+    const showNotification = (message, type) => {
+        setNotification({ show: true, message, type });
+        setTimeout(() => setNotification({ show: false, message: '', type: '' }), 3000);
+    };
+
+    const formatDate = (dateString) => {
+        return new Date(dateString).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+    };
+
+    const formatCurrency = (amount) => {
+        return new Intl.NumberFormat('en-RW', {
+            style: 'currency',
+            currency: 'RWF'
+        }).format(amount);
+    };
 
     return (
-        <ThemeProvider theme={elegantTheme}>
-            <Container maxWidth="xl" sx={{ py: 4 }}>
-                <Typography 
-                    variant="h3" 
-                    gutterBottom 
-                    sx={{ 
-                        textAlign: 'center', 
-                        mb: 4,
-                        fontWeight: 700,
-                        color: '#333333',
-                        position: 'relative',
-                        '&::after': {
-                            content: '""',
-                            position: 'absolute',
-                            bottom: -10,
-                            left: '50%',
-                            transform: 'translateX(-50%)',
-                            width: 100,
-                            height: 4,
-                            backgroundColor: '#CBAF37'
-                        }
-                    }}
-                >
-                    Event Management
-                </Typography>
+        <div className="min-h-screen bg-gradient-to-br from-amber-50 to-amber-100 p-8">
+            <div className="max-w-7xl mx-auto">
+                {/* Header */}
+                <div className="text-center mb-12">
+                    <h1 className="text-4xl font-bold text-amber-900 mb-4">
+                        Event Management
+                    </h1>
+                    <div className="w-24 h-1 bg-amber-600 mx-auto"></div>
+                </div>
 
-                <Box sx={{ display: 'flex', gap: 3, mb: 4 }}>
-                    <Card sx={{ flex: 1 }}>
-                        <CardHeader 
-                            title="Event Types" 
-                            titleTypographyProps={{ 
-                                variant: 'h6', 
-                                color: 'primary',
-                                sx: { fontWeight: 700 }
-                            }}
-                        />
-                        <CardContent>
-                            <TableContainer>
-                                <Table>
-                                    <TableHead>
-                                        <TableRow>
-                                            <TableCell>Event Type</TableCell>
-                                            <TableCell align="right">Fee</TableCell>
-                                        </TableRow>
-                                    </TableHead>
-                                    <TableBody>
-                                        {eventTypes.map((event) => (
-                                            <TableRow key={event.id} hover>
-                                                <TableCell>{event.event_type}</TableCell>
-                                                <TableCell align="right">Rwf {event.fee}</TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </TableContainer>
-                        </CardContent>
-                    </Card>
+                {/* Event Types Section */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+                    {/* Event Types List */}
+                    <div className="bg-white rounded-2xl shadow-xl p-6">
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className="text-xl font-semibold text-amber-900">Event Types</h2>
+                            <span className="text-sm text-amber-600">{eventTypes.length} Types</span>
+                        </div>
+                        <div className="overflow-x-auto">
+                            <table className="w-full">
+                                <thead>
+                                    <tr className="bg-amber-50">
+                                        <th className="px-6 py-3 text-left text-xs font-semibold text-amber-900">
+                                            Event Type
+                                        </th>
+                                        <th className="px-6 py-3 text-right text-xs font-semibold text-amber-900">
+                                            Fee
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-amber-100">
+                                    {eventTypes.map((event) => (
+                                        <tr key={event.id} className="hover:bg-amber-50 transition-colors duration-150">
+                                            <td className="px-6 py-4 text-sm text-gray-900">{event.event_type}</td>
+                                            <td className="px-6 py-4 text-sm text-gray-900 text-right">
+                                                {formatCurrency(event.fee)}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
 
-                    <Card sx={{ flex: 1 }}>
-                        <CardHeader 
-                            title="Add New Event Type" 
-                            titleTypographyProps={{ 
-                                variant: 'h6', 
-                                color: 'primary',
-                                sx: { fontWeight: 700 }
-                            }}
-                        />
-                        <CardContent>
-                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                                <TextField
+                    {/* Add New Event Type */}
+                    <div className="bg-white rounded-2xl shadow-xl p-6">
+                        <h2 className="text-xl font-semibold text-amber-900 mb-6">Add New Event Type</h2>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Event Type
+                                </label>
+                                <input
+                                    type="text"
                                     name="event_type"
-                                    label="Event Type"
                                     value={newEventType.event_type}
                                     onChange={handleEventTypeChange}
-                                    fullWidth
-                                    variant="outlined"
-                                    required
+                                    className="w-full px-4 py-2 border border-amber-200 rounded-lg 
+                                        focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                                    placeholder="Enter event type"
                                 />
-                                <TextField
-                                    name="fee"
-                                    label="Fee"
+                            </div>
+                            
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Fee (RWF)
+                                </label>
+                                <input
                                     type="number"
+                                    name="fee"
                                     value={newEventType.fee}
                                     onChange={handleEventTypeChange}
-                                    fullWidth
-                                    variant="outlined"
-                                    required
+                                    className="w-full px-4 py-2 border border-amber-200 rounded-lg 
+                                        focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                                    placeholder="Enter fee amount"
                                 />
-                                <Button
-                                    variant="contained"
-                                    color="primary"
-                                    onClick={handleAddOrUpdateEventType}
-                                    sx={{ alignSelf: 'flex-start' }}
-                                >
-                                    Add Event Type
-                                </Button>
-                            </Box>
-                        </CardContent>
-                    </Card>
-                </Box>
+                            </div>
 
-                <Card>
-                    <CardHeader 
-                        title="All Bookings" 
-                        titleTypographyProps={{ 
-                            variant: 'h6', 
-                            color: 'primary',
-                            sx: { fontWeight: 700 }
-                        }}
-                    />
-                    <CardContent>
-                        <TableContainer>
-                            <Table>
-                                <TableHead>
-                                    <TableRow>
-                                        {['Name', 'Email', 'Phone', 'Event Type', 'Event Date', 
-                                          'Event Time', 'Fee', 'Notes', 'Status', 'Actions'].map((header) => (
-                                            <TableCell key={header}>{header}</TableCell>
-                                        ))}
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                    {bookings.map((booking) => (
-                                        <TableRow key={booking.id} hover>
-                                            <TableCell>{booking.user_name}</TableCell>
-                                            <TableCell>{booking.user_email}</TableCell>
-                                            <TableCell>{booking.phone_number}</TableCell>
-                                            <TableCell>{booking.event_type}</TableCell>
-                                            <TableCell>{booking.event_date}</TableCell>
-                                            <TableCell>{booking.event_time}</TableCell>
-                                            <TableCell>Rwf {booking.fee}</TableCell>
-                                            <TableCell>{booking.additional_notes}</TableCell>
-                                            <TableCell>{booking.status || 'Pending'}</TableCell>
-                                            <TableCell>
-                                                {booking.status === 'pending' && (
-                                                    <Box sx={{ display: 'flex', gap: 1 }}>
-                                                        <Button
-                                                            variant="contained"
-                                                            color="success"
-                                                            size="small"
-                                                            onClick={() => handleBookingAction(booking.id, 'approve')}
-                                                        >
-                                                            Approve
-                                                        </Button>
-                                                        <Button
-                                                            variant="contained"
-                                                            color="error"
-                                                            size="small"
-                                                            onClick={() => handleBookingAction(booking.id, 'reject')}
-                                                        >
-                                                            Reject
-                                                        </Button>
-                                                    </Box>
-                                                )}
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </TableContainer>
-                    </CardContent>
-                </Card>
+                            <button
+                                onClick={handleAddOrUpdateEventType}
+                                className="flex items-center gap-2 px-6 py-2 bg-amber-600 text-white rounded-lg
+                                    hover:bg-amber-700 transform hover:-translate-y-0.5 transition-all duration-200"
+                            >
+                                <Plus className="w-4 h-4" />
+                                Add Event Type
+                            </button>
+                        </div>
+                    </div>
+                </div>{/* Bookings Table */}
+                <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+                    <div className="p-6 border-b border-amber-100">
+                        <h2 className="text-xl font-semibold text-amber-900">All Bookings</h2>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full">
+                            <thead>
+                                <tr className="bg-amber-50">
+                                    <th className="px-6 py-4 text-left text-xs font-semibold text-amber-900">Name</th>
+                                    <th className="px-6 py-4 text-left text-xs font-semibold text-amber-900">Contact</th>
+                                    <th className="px-6 py-4 text-left text-xs font-semibold text-amber-900">Event Details</th>
+                                    <th className="px-6 py-4 text-left text-xs font-semibold text-amber-900">Notes</th>
+                                    <th className="px-6 py-4 text-left text-xs font-semibold text-amber-900">Status</th>
+                                    <th className="px-6 py-4 text-right text-xs font-semibold text-amber-900">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-amber-100">
+                                {bookings.map((booking) => (
+                                    <tr key={booking.id} className="hover:bg-amber-50 transition-colors duration-150">
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="h-10 w-10 rounded-full bg-amber-100 flex items-center justify-center">
+                                                    <span className="text-amber-700 font-semibold">
+                                                        {booking.user_name.charAt(0)}
+                                                    </span>
+                                                </div>
+                                                <span className="text-sm font-medium text-gray-900">
+                                                    {booking.user_name}
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="space-y-1">
+                                                <div className="flex items-center gap-2 text-sm text-gray-600">
+                                                    <Mail className="w-4 h-4 text-amber-600" />
+                                                    {booking.user_email}
+                                                </div>
+                                                <div className="flex items-center gap-2 text-sm text-gray-600">
+                                                    <Phone className="w-4 h-4 text-amber-600" />
+                                                    {booking.phone_number}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="space-y-1">
+                                                <div className="text-sm font-medium text-gray-900">
+                                                    {booking.event_type}
+                                                </div>
+                                                <div className="flex items-center gap-2 text-sm text-gray-600">
+                                                    <Calendar className="w-4 h-4 text-amber-600" />
+                                                    {formatDate(booking.event_date)}
+                                                </div>
+                                                <div className="flex items-center gap-2 text-sm text-gray-600">
+                                                    <Clock className="w-4 h-4 text-amber-600" />
+                                                    {booking.event_time}
+                                                </div>
+                                                <div className="text-sm font-medium text-amber-600">
+                                                    {formatCurrency(booking.fee)}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <p className="text-sm text-gray-600 line-clamp-2">
+                                                {booking.additional_notes || 'No notes provided'}
+                                            </p>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className={`
+                                                inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                                ${booking.status === 'approved' && 'bg-green-100 text-green-800'}
+                                                ${booking.status === 'rejected' && 'bg-red-100 text-red-800'}
+                                                ${(!booking.status || booking.status === 'pending') && 'bg-yellow-100 text-yellow-800'}
+                                            `}>
+                                                {booking.status || 'Pending'}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                            {(!booking.status || booking.status === 'pending') && (
+                                                <div className="flex justify-end gap-2">
+                                                    <button
+                                                        onClick={() => handleBookingAction(booking.id, 'approve')}
+                                                        className="flex items-center gap-1 px-3 py-1 bg-green-600 text-white rounded-lg
+                                                            hover:bg-green-700 transition-colors duration-200"
+                                                    >
+                                                        <Check className="w-4 h-4" />
+                                                        Approve
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleBookingAction(booking.id, 'reject')}
+                                                        className="flex items-center gap-1 px-3 py-1 bg-red-600 text-white rounded-lg
+                                                            hover:bg-red-700 transition-colors duration-200"
+                                                    >
+                                                        <X className="w-4 h-4" />
+                                                        Reject
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
 
-                <Snackbar
-                    open={snackbar.open}
-                    autoHideDuration={3000}
-                    onClose={handleCloseSnackbar}
-                >
-                    <Alert 
-                        onClose={handleCloseSnackbar} 
-                        severity={snackbar.severity} 
-                        sx={{ width: '100%' }}
-                    >
-                        {snackbar.message}
-                    </Alert>
-                </Snackbar>
-            </Container>
-        </ThemeProvider>
-    );
+               {/* Notification */}
+{notification.show && (
+    <div className="fixed bottom-4 right-4 flex items-center">
+        <div className={`
+            px-6 py-3 rounded-lg shadow-lg flex items-center gap-2
+            ${notification.type === 'success' ? 'bg-green-500' : 'bg-red-500'}
+            text-white font-medium
+            transform transition-all duration-500 ease-out
+            animate-slide-in
+        `}>
+            {notification.type === 'success' ? (
+                <Check className="w-5 h-5" />
+            ) : (
+                <AlertCircle className="w-5 h-5" />
+            )}
+            {notification.message}
+        </div>
+    </div>
+)}
+
+            {/* No Bookings State */}
+            {bookings.length === 0 && (
+                <div className="bg-white rounded-2xl shadow-xl p-12 text-center">
+                    <CalendarDays className="w-16 h-16 text-amber-300 mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">No Bookings Yet</h3>
+                    <p className="text-gray-600">
+                        There are no event bookings to display at the moment.
+                    </p>
+                </div>
+            )}
+        </div>
+    </div>
+);
+};
+
+// Custom utility function to format currency with RWF
+const formatCurrency = (amount) => {
+if (!amount) return 'RWF 0';
+return new Intl.NumberFormat('en-RW', {
+    style: 'currency',
+    currency: 'RWF',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+}).format(amount);
+};
+
+// Custom utility function to format dates
+const formatDate = (dateString) => {
+if (!dateString) return '';
+try {
+    return new Date(dateString).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+} catch (error) {
+    console.error('Error formatting date:', error);
+    return dateString;
+}
 };
 
 export default AdminBookings;

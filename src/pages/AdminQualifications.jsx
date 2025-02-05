@@ -1,137 +1,134 @@
 import React, { useEffect, useState } from 'react';
-import {
-    Box,
-    Typography,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TableRow,
-    Paper,
-    Snackbar,
-    Alert,
-    Chip
-} from '@mui/material';
-import { styled } from '@mui/material/styles';
+import { AlertCircle, CheckCircle, Award } from 'lucide-react';
 import api from '../api';
-
-const CleanWhiteBackground = styled(Box)(({ theme }) => ({
-    backgroundColor: 'white',
-    minHeight: '100vh',
-    padding: theme.spacing(4),
-    display: 'flex',
-    flexDirection: 'column',
-}));
-
-const ElegantTableContainer = styled(TableContainer)(({ theme }) => ({
-    borderRadius: theme.spacing(2),
-    boxShadow: '0 4px 15px rgba(0,0,0,0.1)',
-    marginTop: theme.spacing(3),
-}));
-
-const StyledTableCell = styled(TableCell)(({ theme }) => ({
-    fontWeight: 'bold',
-    color: '#333',
-    borderBottom: `1px solid ${theme.palette.divider}`,
-}));
-
-const QualificationChip = styled(Chip)(({ theme, qualification }) => ({
-    fontWeight: 'bold',
-    backgroundColor: qualification === 'Not Set' 
-        ? 'rgba(158, 158, 158, 0.1)' 
-        : 'rgba(203, 175, 55, 0.1)',
-    color: qualification === 'Not Set' 
-        ? '#9E9E9E' 
-        : '#CBAF37',
-}));
 
 const AdminQualifications = () => {
     const [qualifications, setQualifications] = useState([]);
-    const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: '' });
+    const [notification, setNotification] = useState({
+        show: false,
+        message: '',
+        type: ''
+    });
 
-    // Fetch qualifications
     useEffect(() => {
-        const fetchQualifications = async () => {
-            try {
-                const response = await api.get('/qualifications');
-                // Sort qualifications alphabetically by user name
-                const sortedQualifications = response.data.sort((a, b) => 
-                    a.user_name.localeCompare(b.user_name)
-                );
-                setQualifications(sortedQualifications);
-            } catch (error) {
-                setSnackbar({ 
-                    open: true, 
-                    message: 'Failed to fetch qualifications.', 
-                    severity: 'error' 
-                });
-                console.error('Error fetching qualifications:', error);
-            }
-        };
         fetchQualifications();
     }, []);
 
-    const handleCloseSnackbar = () => setSnackbar({ open: false, message: '', severity: '' });
+    const fetchQualifications = async () => {
+        try {
+            const response = await api.get('/qualifications');
+            const sortedQualifications = response.data.sort((a, b) => 
+                a.user_name.localeCompare(b.user_name)
+            );
+            setQualifications(sortedQualifications);
+        } catch (error) {
+            showNotification('Failed to fetch qualifications.', 'error');
+            console.error('Error fetching qualifications:', error);
+        }
+    };
+
+    const showNotification = (message, type) => {
+        setNotification({ show: true, message, type });
+        setTimeout(() => setNotification({ show: false, message: '', type: '' }), 3000);
+    };
+
+    const getQualificationColor = (qualification) => {
+        switch(qualification) {
+            case 'Expert':
+                return 'bg-green-100 text-green-800';
+            case 'Intermediate':
+                return 'bg-amber-100 text-amber-800';
+            case 'Beginner':
+                return 'bg-blue-100 text-blue-800';
+            default:
+                return 'bg-gray-100 text-gray-600';
+        }
+    };
 
     return (
-        <CleanWhiteBackground>
-            <Typography 
-                variant="h4" 
-                gutterBottom 
-                sx={{ 
-                    color: '#333', 
-                    fontWeight: 'bold', 
-                    mb: 4 
-                }}
-            >
-                User Qualifications Overview
-            </Typography>
-            
-            <ElegantTableContainer component={Paper}>
-                <Table>
-                    <TableHead>
-                        <TableRow>
-                            <StyledTableCell>User Name</StyledTableCell>
-                            <StyledTableCell align="right">Qualification</StyledTableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {qualifications.map(({ user_id, user_name, qualification }) => (
-                            <TableRow key={user_id} hover>
-                                <StyledTableCell>{user_name}</StyledTableCell>
-                                <StyledTableCell align="right">
-                                    <QualificationChip 
-                                        label={qualification || 'Not Set'}
-                                        qualification={qualification || 'Not Set'}
-                                        size="small"
-                                    />
-                                </StyledTableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </ElegantTableContainer>
+        <div className="min-h-screen bg-gradient-to-br from-amber-50 to-amber-100 p-8">
+            <div className="max-w-6xl mx-auto">
+                {/* Header */}
+                <div className="mb-8">
+                    <div className="flex items-center gap-3 mb-2">
+                        <Award className="w-8 h-8 text-amber-600" />
+                        <h1 className="text-3xl font-bold text-amber-900">
+                            User Qualifications Overview
+                        </h1>
+                    </div>
+                    <p className="text-amber-700 ml-11">
+                        View and monitor user qualification levels
+                    </p>
+                </div>
 
-            <Snackbar 
-                open={snackbar.open} 
-                autoHideDuration={3000} 
-                onClose={handleCloseSnackbar}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-            >
-                <Alert 
-                    onClose={handleCloseSnackbar} 
-                    severity={snackbar.severity} 
-                    sx={{ 
-                        width: '100%',
-                        backgroundColor: snackbar.severity === 'error' ? '#ff4444' : '#00C851',
-                        color: 'white'
-                    }}
-                >
-                    {snackbar.message}
-                </Alert>
-            </Snackbar>
-        </CleanWhiteBackground>
+                {/* Qualifications Table */}
+                <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+                    <div className="overflow-x-auto">
+                        <table className="w-full">
+                            <thead>
+                                <tr className="bg-amber-50">
+                                    <th className="px-6 py-4 text-left text-sm font-semibold text-amber-900">
+                                        User
+                                    </th>
+                                    <th className="px-6 py-4 text-right text-sm font-semibold text-amber-900">
+                                        Qualification Level
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-amber-100">
+                                {qualifications.map(({ user_id, user_name, qualification }) => (
+                                    <tr 
+                                        key={user_id}
+                                        className="hover:bg-amber-50 transition-colors duration-150"
+                                    >
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="h-10 w-10 rounded-full bg-amber-100 flex items-center justify-center">
+                                                    <span className="text-amber-700 font-semibold">
+                                                        {user_name.charAt(0)}
+                                                    </span>
+                                                </div>
+                                                <span className="text-sm font-medium text-gray-900">
+                                                    {user_name}
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                            <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium
+                                                ${getQualificationColor(qualification)}`}
+                                            >
+                                                <span className="w-1.5 h-1.5 rounded-full bg-current" />
+                                                {qualification || 'Not Set'}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                {/* Notification */}
+                {notification.show && (
+                    <div className="fixed bottom-4 right-4 flex items-center">
+                        <div className={`
+                            px-6 py-3 rounded-lg shadow-lg flex items-center gap-2
+                            ${notification.type === 'success' ? 'bg-green-500' : 'bg-red-500'}
+                            text-white font-medium
+                            transform transition-all duration-500 ease-out
+                            animate-slide-in
+                        `}>
+                            {notification.type === 'success' ? (
+                                <CheckCircle className="w-5 h-5" />
+                            ) : (
+                                <AlertCircle className="w-5 h-5" />
+                            )}
+                            {notification.message}
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
     );
 };
 

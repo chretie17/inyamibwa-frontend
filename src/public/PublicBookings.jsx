@@ -1,35 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import {
-    Box,
-    Typography,
-    TextField,
-    Button,
-    Select,
-    MenuItem,
-    Snackbar,
-    Alert,
-    Container,
-    Paper,
-    useTheme
-} from '@mui/material';
-import { motion } from 'framer-motion';
-import { 
-    CoffeeOutlined as CoffeeIcon, 
-    SendOutlined as SendIcon 
-} from '@mui/icons-material';
+import { Coffee, Send, Calendar, Clock, AlertCircle, CheckCircle } from 'lucide-react';
 import api from '../api';
 
-// Chocolate Color Palette
-const chocolateTheme = {
-    primary: '#6F4E37',      // Rich Coffee Brown
-    secondary: '#D2691E',    // Chocolate Depth
-    background: '#F5DEB3',   // Wheat/Cream
-    text: '#3E2723',         // Dark Chocolate
-    accent: '#8B4513'        // Saddle Brown
-};
-
 const PublicBooking = () => {
-    const theme = useTheme();
     const [eventTypes, setEventTypes] = useState([]);
     const [formData, setFormData] = useState({
         user_name: '',
@@ -40,23 +13,25 @@ const PublicBooking = () => {
         event_time: '',
         additional_notes: '',
     });
-    const [snackbar, setSnackbar] = useState({ 
-        open: false, 
-        message: '', 
-        severity: 'success' 
+    const [notification, setNotification] = useState({
+        show: false,
+        message: '',
+        type: ''
     });
 
     useEffect(() => {
-        const fetchEventTypes = async () => {
-            try {
-                const response = await api.get('/bookings/event-types');
-                setEventTypes(response.data);
-            } catch (error) {
-                console.error('Failed to fetch event types:', error);
-            }
-        };
         fetchEventTypes();
     }, []);
+
+    const fetchEventTypes = async () => {
+        try {
+            const response = await api.get('/bookings/event-types');
+            setEventTypes(response.data);
+        } catch (error) {
+            showNotification('Failed to fetch event types', 'error');
+            console.error('Failed to fetch event types:', error);
+        }
+    };
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -67,12 +42,7 @@ const PublicBooking = () => {
         e.preventDefault();
         try {
             const response = await api.post('/bookings/book', formData);
-            setSnackbar({ 
-                open: true, 
-                message: response.data.message, 
-                severity: 'success' 
-            });
-            // Reset form
+            showNotification(response.data.message, 'success');
             setFormData({
                 user_name: '',
                 user_email: '',
@@ -83,275 +53,216 @@ const PublicBooking = () => {
                 additional_notes: '',
             });
         } catch (error) {
-            setSnackbar({ 
-                open: true, 
-                message: 'Failed to create booking', 
-                severity: 'error' 
-            });
+            showNotification('Failed to create booking', 'error');
+            console.error('Error creating booking:', error);
         }
     };
 
-    const formVariants = {
-        hidden: { opacity: 0, y: 20 },
-        visible: { 
-            opacity: 1, 
-            y: 0,
-            transition: { 
-                type: "spring", 
-                stiffness: 50,
-                when: "beforeChildren",
-                staggerChildren: 0.1
-            }
-        }
+    const showNotification = (message, type) => {
+        setNotification({ show: true, message, type });
+        setTimeout(() => setNotification({ show: false, message: '', type: '' }), 3000);
     };
 
-    const itemVariants = {
-        hidden: { opacity: 0, y: 20 },
-        visible: { 
-            opacity: 1, 
-            y: 0,
-            transition: { 
-                type: "spring", 
-                stiffness: 100 
-            }
-        }
+    const formatCurrency = (amount) => {
+        return new Intl.NumberFormat('en-RW', {
+            style: 'currency',
+            currency: 'RWF',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        }).format(amount);
     };
 
     return (
-        <Box 
-            sx={{
-                minHeight: '100vh',
-                background: `linear-gradient(135deg, ${chocolateTheme.background} 0%, #FFF3E0 100%)`,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: theme.spacing(4),
-                position: 'relative',
-                overflow: 'hidden'
-            }}
-        >
-            {/* Decorative Coffee Bean Background */}
-            <Box 
-                sx={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    opacity: 0.05,
-                    backgroundImage: `
-                        radial-gradient(${chocolateTheme.primary} 10%, transparent 11%),
-                        radial-gradient(${chocolateTheme.primary} 10%, transparent 11%)
-                    `,
-                    backgroundSize: '30px 30px',
-                    backgroundPosition: '0 0, 15px 15px'
-                }}
-            />
+        <div className="min-h-screen bg-gradient-to-br from-amber-50 to-amber-100 p-8">
+            {/* Background Pattern */}
+            <div className="fixed inset-0 opacity-5 pattern-dots pattern-amber-900 pattern-bg-white pattern-size-4 pattern-opacity-20" />
 
-            <Container maxWidth="sm">
-                <motion.div
-                    initial="hidden"
-                    animate="visible"
-                    variants={formVariants}
-                >
-                    <Paper 
-                        elevation={12}
-                        sx={{
-                            borderRadius: theme.spacing(3),
-                            background: 'rgba(255,255,255,0.9)',
-                            padding: theme.spacing(4),
-                            boxShadow: `0 16px 32px rgba(${chocolateTheme.text}, 0.2)`,
-                            border: `2px solid ${chocolateTheme.primary}`
-                        }}
-                    >
-                        <motion.div variants={itemVariants}>
-                            <Typography 
-                                variant="h4" 
-                                align="center" 
-                                gutterBottom
-                                sx={{
-                                    color: chocolateTheme.primary,
-                                    fontWeight: 700,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    marginBottom: theme.spacing(3)
-                                }}
-                            >
-                                <CoffeeIcon 
-                                    sx={{ 
-                                        marginRight: theme.spacing(2), 
-                                        color: chocolateTheme.secondary 
-                                    }} 
+            <div className="max-w-2xl mx-auto">
+                {/* Booking Form Card */}
+                <div className="relative bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl border border-amber-200 p-8 
+                    animate-fade-in transform hover:shadow-2xl transition-all duration-300">
+                    
+                    {/* Header */}
+                    <div className="text-center mb-8">
+                        <div className="flex justify-center mb-4">
+                            <div className="p-4 bg-amber-100 rounded-xl">
+                                <Coffee className="w-8 h-8 text-amber-600" />
+                            </div>
+                        </div>
+                        <h1 className="text-3xl font-bold text-amber-900 mb-2">Book Your Event</h1>
+                        <p className="text-amber-700">Fill in the details below to schedule your event</p>
+                    </div>
+
+                    {/* Form */}
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        {/* Personal Info */}
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Full Name
+                                </label>
+                                <input
+                                    type="text"
+                                    name="user_name"
+                                    value={formData.user_name}
+                                    onChange={handleChange}
+                                    className="w-full px-4 py-3 rounded-lg border border-amber-200 
+                                        focus:ring-2 focus:ring-amber-500 focus:border-amber-500
+                                        transition-all duration-200"
+                                    required
                                 />
-                                Book Your Event
-                            </Typography>
-                        </motion.div>
+                            </div>
 
-                        <form onSubmit={handleSubmit}>
-                            {[
-                                { name: 'user_name', label: 'Name', type: 'text' },
-                                { name: 'user_email', label: 'Email', type: 'email' },
-                                { name: 'phone_number', label: 'Phone Number', type: 'tel' }
-                            ].map((field) => (
-                                <motion.div 
-                                    key={field.name} 
-                                    variants={itemVariants}
-                                >
-                                    <TextField
-                                        name={field.name}
-                                        label={field.label}
-                                        type={field.type}
-                                        value={formData[field.name]}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Email Address
+                                    </label>
+                                    <input
+                                        type="email"
+                                        name="user_email"
+                                        value={formData.user_email}
                                         onChange={handleChange}
-                                        fullWidth
-                                        margin="normal"
+                                        className="w-full px-4 py-3 rounded-lg border border-amber-200 
+                                            focus:ring-2 focus:ring-amber-500 focus:border-amber-500
+                                            transition-all duration-200"
                                         required
-                                        variant="outlined"
-                                        sx={{
-                                            '& .MuiOutlinedInput-root': {
-                                                '& fieldset': {
-                                                    borderColor: chocolateTheme.primary,
-                                                },
-                                                '&:hover fieldset': {
-                                                    borderColor: chocolateTheme.secondary,
-                                                },
-                                                '&.Mui-focused fieldset': {
-                                                    borderColor: chocolateTheme.accent,
-                                                },
-                                            },
-                                        }}
                                     />
-                                </motion.div>
-                            ))}
+                                </div>
 
-                            <motion.div variants={itemVariants}>
-                                <Select
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Phone Number
+                                    </label>
+                                    <input
+                                        type="tel"
+                                        name="phone_number"
+                                        value={formData.phone_number}
+                                        onChange={handleChange}
+                                        className="w-full px-4 py-3 rounded-lg border border-amber-200 
+                                            focus:ring-2 focus:ring-amber-500 focus:border-amber-500
+                                            transition-all duration-200"
+                                        required
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Event Details */}
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Event Type
+                                </label>
+                                <select
                                     name="event_type_id"
                                     value={formData.event_type_id}
                                     onChange={handleChange}
-                                    fullWidth
-                                    displayEmpty
+                                    className="w-full px-4 py-3 rounded-lg border border-amber-200 
+                                        focus:ring-2 focus:ring-amber-500 focus:border-amber-500
+                                        transition-all duration-200"
                                     required
-                                    variant="outlined"
-                                    sx={{
-                                        marginTop: theme.spacing(2),
-                                        '& .MuiOutlinedInput-notchedOutline': {
-                                            borderColor: chocolateTheme.primary,
-                                        },
-                                    }}
                                 >
-                                    <MenuItem value="" disabled>
-                                        Select Event Type
-                                    </MenuItem>
-                                    {eventTypes.map((event) => (
-                                        <MenuItem key={event.id} value={event.id}>
-                                            {event.event_type} - RWF{event.fee}
-                                        </MenuItem>
+                                    <option value="">Select an event type</option>
+                                    {eventTypes.map((type) => (
+                                        <option key={type.id} value={type.id}>
+                                            {type.event_type} - {formatCurrency(type.fee)}
+                                        </option>
                                     ))}
-                                </Select>
-                            </motion.div>
+                                </select>
+                            </div>
 
-                            {[
-                                { name: 'event_date', label: 'Event Date', type: 'date' },
-                                { name: 'event_time', label: 'Event Time', type: 'time' }
-                            ].map((field) => (
-                                <motion.div 
-                                    key={field.name} 
-                                    variants={itemVariants}
-                                >
-                                    <TextField
-                                        name={field.name}
-                                        label={field.label}
-                                        type={field.type}
-                                        value={formData[field.name]}
-                                        onChange={handleChange}
-                                        fullWidth
-                                        margin="normal"
-                                        required
-                                        variant="outlined"
-                                        InputLabelProps={{ shrink: true }}
-                                        sx={{
-                                            '& .MuiOutlinedInput-root': {
-                                                '& fieldset': {
-                                                    borderColor: chocolateTheme.primary,
-                                                },
-                                            },
-                                        }}
-                                    />
-                                </motion.div>
-                            ))}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Event Date
+                                    </label>
+                                    <div className="relative">
+                                        <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-amber-600 w-5 h-5" />
+                                        <input
+                                            type="date"
+                                            name="event_date"
+                                            value={formData.event_date}
+                                            onChange={handleChange}
+                                            className="w-full pl-12 pr-4 py-3 rounded-lg border border-amber-200 
+                                                focus:ring-2 focus:ring-amber-500 focus:border-amber-500
+                                                transition-all duration-200"
+                                            required
+                                        />
+                                    </div>
+                                </div>
 
-                            <motion.div variants={itemVariants}>
-                                <TextField
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Event Time
+                                    </label>
+                                    <div className="relative">
+                                        <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-amber-600 w-5 h-5" />
+                                        <input
+                                            type="time"
+                                            name="event_time"
+                                            value={formData.event_time}
+                                            onChange={handleChange}
+                                            className="w-full pl-12 pr-4 py-3 rounded-lg border border-amber-200 
+                                                focus:ring-2 focus:ring-amber-500 focus:border-amber-500
+                                                transition-all duration-200"
+                                            required
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Additional Notes
+                                </label>
+                                <textarea
                                     name="additional_notes"
-                                    label="Additional Notes"
                                     value={formData.additional_notes}
                                     onChange={handleChange}
-                                    fullWidth
-                                    margin="normal"
-                                    multiline
-                                    rows={3}
-                                    variant="outlined"
-                                    sx={{
-                                        '& .MuiOutlinedInput-root': {
-                                            '& fieldset': {
-                                                borderColor: chocolateTheme.primary,
-                                            },
-                                        },
-                                    }}
+                                    rows="4"
+                                    className="w-full px-4 py-3 rounded-lg border border-amber-200 
+                                        focus:ring-2 focus:ring-amber-500 focus:border-amber-500
+                                        transition-all duration-200"
+                                    placeholder="Any special requests or additional information..."
                                 />
-                            </motion.div>
+                            </div>
+                        </div>
 
-                            <motion.div variants={itemVariants}>
-                                <Button
-                                    type="submit"
-                                    variant="contained"
-                                    fullWidth
-                                    endIcon={<SendIcon />}
-                                    sx={{
-                                        marginTop: theme.spacing(2),
-                                        background: `linear-gradient(45deg, ${chocolateTheme.primary} 30%, ${chocolateTheme.secondary} 90%)`,
-                                        color: 'white',
-                                        padding: theme.spacing(1.5),
-                                        borderRadius: theme.spacing(2),
-                                        transition: 'all 0.3s ease',
-                                        '&:hover': {
-                                            transform: 'scale(1.02)',
-                                            boxShadow: `0 8px 16px rgba(${chocolateTheme.text}, 0.3)`
-                                        }
-                                    }}
-                                >
-                                    Submit Booking
-                                </Button>
-                            </motion.div>
-                        </form>
-                    </Paper>
-                </motion.div>
-            </Container>
+                        {/* Submit Button */}
+                        <button
+                            type="submit"
+                            className="w-full bg-gradient-to-r from-amber-600 to-amber-700 text-white py-4 px-6 rounded-xl
+                                flex items-center justify-center gap-2 transform hover:-translate-y-0.5 transition-all duration-200
+                                hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
+                        >
+                            <Send className="w-5 h-5" />
+                            <span>Submit Booking</span>
+                        </button>
+                    </form>
+                </div>
 
-            <Snackbar 
-                open={snackbar.open} 
-                autoHideDuration={4000} 
-                onClose={() => setSnackbar({ ...snackbar, open: false })}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-            >
-                <Alert 
-                    onClose={() => setSnackbar({ ...snackbar, open: false })} 
-                    severity={snackbar.severity}
-                    sx={{
-                        backgroundColor: snackbar.severity === 'success' 
-                            ? chocolateTheme.background 
-                            : chocolateTheme.secondary,
-                        color: snackbar.severity === 'success' 
-                            ? chocolateTheme.text 
-                            : 'white'
-                    }}
-                >
-                    {snackbar.message}
-                </Alert>
-            </Snackbar>
-        </Box>
+                {/* Notification */}
+                {notification.show && (
+                    <div className="fixed bottom-4 right-4 flex items-center">
+                        <div className={`
+                            px-6 py-3 rounded-lg shadow-lg flex items-center gap-2
+                            ${notification.type === 'success' ? 'bg-green-500' : 'bg-red-500'}
+                            text-white font-medium
+                            transform transition-all duration-500 ease-out
+                            animate-slide-in
+                        `}>
+                            {notification.type === 'success' ? (
+                                <CheckCircle className="w-5 h-5" />
+                            ) : (
+                                <AlertCircle className="w-5 h-5" />
+                            )}
+                            {notification.message}
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
     );
 };
 
