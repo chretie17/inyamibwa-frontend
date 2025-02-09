@@ -1,26 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-    Box,
-    Button,
-    TextField,
-    IconButton,
-    Select,
-    MenuItem,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TableRow,
-    Paper,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    DialogTitle,
-    Typography,
-} from '@mui/material';
-import { Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
-import styled from 'styled-components';
+import { Edit, Trash2 } from 'lucide-react';
 import api from '../api';
 
 const ManageUsers = () => {
@@ -39,7 +18,6 @@ const ManageUsers = () => {
     const roles = ['admin', 'trainer', 'user'];
     const qualifications = ['Beginner', 'Intermediate', 'Expert'];
 
-    // Fetch all users
     useEffect(() => {
         const fetchUsers = async () => {
             try {
@@ -54,7 +32,6 @@ const ManageUsers = () => {
         fetchUsers();
     }, []);
 
-    // Open dialog for adding or editing a user
     const handleOpenDialog = (user = null) => {
         setSelectedUser(user);
         setNewUser(user ? { ...user, password: '' } : {
@@ -68,16 +45,13 @@ const ManageUsers = () => {
         setOpenDialog(true);
     };
 
-    // Close dialog
     const handleCloseDialog = () => setOpenDialog(false);
 
-    // Handle form input changes
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setNewUser((prev) => ({ ...prev, [name]: value }));
     };
 
-    // Save a new or edited user
     const handleSaveUser = async () => {
         try {
             if (selectedUser) {
@@ -93,7 +67,6 @@ const ManageUsers = () => {
         }
     };
 
-    // Delete a user
     const handleDeleteUser = async (userId) => {
         try {
             await api.delete(`/users/${userId}`);
@@ -104,203 +77,154 @@ const ManageUsers = () => {
     };
 
     return (
-        <Box sx={{ p: 3 }}>
-            <Container>
-                <Typography variant="h4" sx={{ color: '#000000', fontWeight: 'bold' }} gutterBottom>
-                    Manage Users
-                </Typography>
-                <Button
-                    variant="contained"
-                    color="primary"
-                    onClick={() => handleOpenDialog()}
-                    sx={{ mb: 2, backgroundColor: '#DAA520', color: '#FFFFFF', fontWeight: 'bold', '&:hover': { backgroundColor: '#B8860B' } }}
-                >
-                    Add New User
-                </Button>
-
-                <TableContainer component={Paper} sx={{ boxShadow: '0px 8px 30px rgba(0, 0, 0, 0.7)', borderRadius: '16px', backgroundColor: '#FFFFFF', overflow: 'hidden' }}>
-                    <Table>
-                        <TableHead>
-                            <TableRow>
-                                <StyledTableCell>Name</StyledTableCell>
-                                <StyledTableCell>Email</StyledTableCell>
-                                <StyledTableCell>Username</StyledTableCell>
-                                <StyledTableCell>Role</StyledTableCell>
-                                <StyledTableCell>Qualifications</StyledTableCell>
-                                <StyledTableCell>Actions</StyledTableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {users.length > 0 ? (
-                                users.map((user) => (
-                                    <StyledTableRow key={user.id}>
-                                        <StyledTableCell>{user.name}</StyledTableCell>
-                                        <StyledTableCell>{user.email}</StyledTableCell>
-                                        <StyledTableCell>{user.username}</StyledTableCell>
-                                        <StyledTableCell>{user.role}</StyledTableCell>
-                                        <StyledTableCell>{user.qualifications}</StyledTableCell>
-                                        <StyledTableCell>
-                                            <IconButton
-                                                onClick={() => handleOpenDialog(user)}
-                                                sx={{ color: '#DAA520', '&:hover': { color: '#B8860B' } }}
-                                            >
-                                                <EditIcon />
-                                            </IconButton>
-                                            <IconButton
-                                                onClick={() => handleDeleteUser(user.id)}
-                                                sx={{ color: '#ff4c4c', '&:hover': { color: '#ff0000' } }}
-                                            >
-                                                <DeleteIcon />
-                                            </IconButton>
-                                        </StyledTableCell>
-                                    </StyledTableRow>
-                                ))
-                            ) : (
-                                <StyledTableRow>
-                                    <StyledTableCell colSpan={6} align="center" sx={{ color: '#000000', fontStyle: 'italic' }}>
-                                        No users found
-                                    </StyledTableCell>
-                                </StyledTableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                </TableContainer>
-
-                {/* Add/Edit User Dialog */}
-                <StyledDialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-                    <DialogTitle sx={{ color: '#000000' }}>{selectedUser ? 'Edit User' : 'Add New User'}</DialogTitle>
-                    <DialogContent>
-                        <TextField
-                            autoFocus
-                            margin="dense"
-                            label="Name"
-                            name="name"
-                            value={newUser.name}
-                            onChange={handleInputChange}
-                            fullWidth
-                            variant="outlined"
-                            sx={{ mb: 2, backgroundColor: '#FFFFFF', borderRadius: '8px', input: { color: '#000000', fontSize: '1.1rem' } }}
-                        />
-                        <TextField
-                            margin="dense"
-                            label="Email"
-                            name="email"
-                            value={newUser.email}
-                            onChange={handleInputChange}
-                            fullWidth
-                            variant="outlined"
-                            sx={{ mb: 2, backgroundColor: '#FFFFFF', borderRadius: '8px', input: { color: '#000000', fontSize: '1.1rem' } }}
-                        />
-                        <TextField
-                            margin="dense"
-                            label="Username"
-                            name="username"
-                            value={newUser.username}
-                            onChange={handleInputChange}
-                            fullWidth
-                            variant="outlined"
-                            sx={{ mb: 2, backgroundColor: '#FFFFFF', borderRadius: '8px', input: { color: '#000000', fontSize: '1.1rem' } }}
-                        />
-                        <TextField
-                            margin="dense"
-                            label="Password"
-                            name="password"
-                            type="password"
-                            value={newUser.password}
-                            onChange={handleInputChange}
-                            fullWidth
-                            variant="outlined"
-                            sx={{ mb: 2, backgroundColor: '#FFFFFF', borderRadius: '8px', input: { color: '#000000', fontSize: '1.1rem' } }}
-                        />
-                        <Select
-                            label="Role"
-                            name="role"
-                            value={newUser.role}
-                            onChange={handleInputChange}
-                            fullWidth
-                            displayEmpty
-                            variant="outlined"
-                            sx={{ mt: 2, mb: 2, backgroundColor: '#FFFFFF', borderRadius: '8px', color: '#000000', fontSize: '1.1rem' }}
+        <div className="min-h-screen bg-[#FEF8DF] p-8">
+            <div className="max-w-7xl mx-auto bg-white rounded-3xl shadow-2xl overflow-hidden">
+                <div className="p-8">
+                    <div className="flex justify-between items-center mb-8">
+                        <h1 className="text-3xl font-bold text-[#DAA520]">Manage Users</h1>
+                        <button
+                            onClick={() => handleOpenDialog()}
+                            className="px-6 py-3 bg-[#DAA520] hover:bg-[#B8860B] text-white font-bold rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg"
                         >
-                            <MenuItem value="" disabled>
-                                Select Role
-                            </MenuItem>
-                            {roles.map((role) => (
-                                <MenuItem key={role} value={role} sx={{ color: '#000000' }}>
-                                    {role.charAt(0).toUpperCase() + role.slice(1)}
-                                </MenuItem>
-                            ))}
-                        </Select>
-                        <Select
-                            label="Qualifications"
-                            name="qualifications"
-                            value={newUser.qualifications}
-                            onChange={handleInputChange}
-                            fullWidth
-                            displayEmpty
-                            variant="outlined"
-                            sx={{ mt: 2, mb: 2, backgroundColor: '#FFFFFF', borderRadius: '8px', color: '#000000', fontSize: '1.1rem' }}
-                        >
-                            <MenuItem value="" disabled>
-                                Select Qualifications
-                            </MenuItem>
-                            {qualifications.map((qual) => (
-                                <MenuItem key={qual} value={qual} sx={{ color: '#000000' }}>
-                                    {qual}
-                                </MenuItem>
-                            ))}
-                        </Select>
-                    </DialogContent>
-                    <DialogActions>
-                        <Button onClick={handleCloseDialog} sx={{ color: '#ff4c4c', fontWeight: 'bold', fontSize: '1rem' }}>
-                            Cancel
-                        </Button>
-                        <Button onClick={handleSaveUser} sx={{ backgroundColor: '#DAA520', color: '#FFFFFF', fontWeight: 'bold', fontSize: '1rem', '&:hover': { backgroundColor: '#B8860B' } }}>
-                            {selectedUser ? 'Update' : 'Save'}
-                        </Button>
-                    </DialogActions>
-                </StyledDialog>
-            </Container>
-        </Box>
+                            Add New User
+                        </button>
+                    </div>
+
+                    <div className="overflow-x-auto rounded-xl shadow-xl">
+                        <table className="w-full">
+                            <thead>
+                                <tr className="bg-[#FEF8DF]">
+                                    <th className="px-6 py-4 text-left text-[#DAA520] font-bold text-lg">Name</th>
+                                    <th className="px-6 py-4 text-left text-[#DAA520] font-bold text-lg">Email</th>
+                                    <th className="px-6 py-4 text-left text-[#DAA520] font-bold text-lg">Username</th>
+                                    <th className="px-6 py-4 text-left text-[#DAA520] font-bold text-lg">Role</th>
+                                    <th className="px-6 py-4 text-left text-[#DAA520] font-bold text-lg">Qualifications</th>
+                                    <th className="px-6 py-4 text-left text-[#DAA520] font-bold text-lg">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {users.length > 0 ? (
+                                    users.map((user) => (
+                                        <tr key={user.id} className="border-b border-[#FEF8DF] hover:bg-[#FEF8DF] transition-colors duration-200">
+                                            <td className="px-6 py-4 text-gray-800">{user.name}</td>
+                                            <td className="px-6 py-4 text-gray-800">{user.email}</td>
+                                            <td className="px-6 py-4 text-gray-800">{user.username}</td>
+                                            <td className="px-6 py-4 text-gray-800">{user.role}</td>
+                                            <td className="px-6 py-4 text-gray-800">{user.qualifications}</td>
+                                            <td className="px-6 py-4 space-x-2">
+                                                <button
+                                                    onClick={() => handleOpenDialog(user)}
+                                                    className="p-2 text-[#DAA520] hover:text-[#B8860B] transition-colors duration-200 hover:bg-[#FEF8DF] rounded-lg"
+                                                >
+                                                    <Edit className="h-5 w-5" />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeleteUser(user.id)}
+                                                    className="p-2 text-red-500 hover:text-red-700 transition-colors duration-200 hover:bg-[#FEF8DF] rounded-lg"
+                                                >
+                                                    <Trash2 className="h-5 w-5" />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan={6} className="px-6 py-8 text-center text-gray-500 italic bg-white">
+                                            No users found
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            {openDialog && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-8 transform transition-all">
+                        <h2 className="text-2xl font-bold text-[#DAA520] mb-6">
+                            {selectedUser ? 'Edit User' : 'Add New User'}
+                        </h2>
+                        <div className="space-y-4">
+                            <input
+                                type="text"
+                                name="name"
+                                placeholder="Name"
+                                value={newUser.name}
+                                onChange={handleInputChange}
+                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#DAA520] focus:border-transparent bg-[#FEF8DF] placeholder-gray-400"
+                            />
+                            <input
+                                type="email"
+                                name="email"
+                                placeholder="Email"
+                                value={newUser.email}
+                                onChange={handleInputChange}
+                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#DAA520] focus:border-transparent bg-[#FEF8DF] placeholder-gray-400"
+                            />
+                            <input
+                                type="text"
+                                name="username"
+                                placeholder="Username"
+                                value={newUser.username}
+                                onChange={handleInputChange}
+                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#DAA520] focus:border-transparent bg-[#FEF8DF] placeholder-gray-400"
+                            />
+                            <input
+                                type="password"
+                                name="password"
+                                placeholder="Password"
+                                value={newUser.password}
+                                onChange={handleInputChange}
+                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#DAA520] focus:border-transparent bg-[#FEF8DF] placeholder-gray-400"
+                            />
+                            <select
+                                name="role"
+                                value={newUser.role}
+                                onChange={handleInputChange}
+                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#DAA520] focus:border-transparent bg-[#FEF8DF] text-gray-700"
+                            >
+                                <option value="" disabled>Select Role</option>
+                                {roles.map((role) => (
+                                    <option key={role} value={role}>
+                                        {role.charAt(0).toUpperCase() + role.slice(1)}
+                                    </option>
+                                ))}
+                            </select>
+                            <select
+                                name="qualifications"
+                                value={newUser.qualifications}
+                                onChange={handleInputChange}
+                                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#DAA520] focus:border-transparent bg-[#FEF8DF] text-gray-700"
+                            >
+                                <option value="" disabled>Select Qualifications</option>
+                                {qualifications.map((qual) => (
+                                    <option key={qual} value={qual}>
+                                        {qual}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="mt-8 flex justify-end space-x-4">
+                            <button
+                                onClick={handleCloseDialog}
+                                className="px-6 py-3 text-gray-600 font-bold hover:text-gray-800 transition-colors duration-200"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleSaveUser}
+                                className="px-6 py-3 bg-[#DAA520] hover:bg-[#B8860B] text-white font-bold rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg"
+                            >
+                                {selectedUser ? 'Update' : 'Save'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
     );
 };
 
 export default ManageUsers;
-
-const Container = styled(Box)`
-  background-color: #FFFFFF;
-  border-radius: 16px;
-  padding: 32px;
-  box-shadow: 0px 8px 30px rgba(0, 0, 0, 0.7);
-  color: #000000;
-`;
-
-const StyledTableCell = styled(TableCell)`
-  color: #000000;
-  font-weight: bold;
-  font-size: 1.2rem;
-  border-bottom: 2px solid #4a4a4a;
-  padding: 24px;
-  background-color: #f5f5f5;
-`;
-
-const StyledTableRow = styled(TableRow)`
-  &:nth-of-type(odd) {
-    background-color: #f9f9f9;
-  }
-  &:nth-of-type(even) {
-    background-color: #ffffff;
-  }
-  &:hover {
-    background-color: #e6e6e6;
-  }
-`;
-
-const StyledDialog = styled(Dialog)`
-  .MuiDialog-paper {
-    background-color: #FFFFFF;
-    color: #000000;
-    border-radius: 16px;
-    box-shadow: 0px 8px 30px rgba(0, 0, 0, 0.9);
-  }
-`;

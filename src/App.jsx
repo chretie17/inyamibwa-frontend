@@ -18,6 +18,7 @@ import PublicBookings from './public/PublicBookings';
 import AdminBookings from './pages/AdminBookings';
 import Profile from './public/Profile';
 import Complaints from './public/Complaints';
+import FilteredEvents from './pages/UserSchedule';
 import AdminComplaints from './pages/Complaints';
 import ViewComplaints from './public/Complaints';
 import Report from './pages/Reports';
@@ -158,6 +159,14 @@ const App = () => {
                     element={
                         <Layout>
                             <AdminComplaints />
+                        </Layout>
+                    }
+                />
+                 <Route
+                    path="/schedules"
+                    element={
+                        <Layout>
+                            <FilteredEvents />
                         </Layout>
                     }
                 />

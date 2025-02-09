@@ -97,6 +97,12 @@ const UserNavbar = () => {
       visible: userRole === 'user'
     },
     { 
+      text: 'Training Schedules', 
+      path: '/schedules', 
+      icon: <Report />,
+      visible: userRole === 'user'
+    },
+    { 
       text: userRole ? 'Logout' : 'Login', 
       path: userRole ? null : '/login', 
       icon: userRole ? <Logout /> : <Login />, 
