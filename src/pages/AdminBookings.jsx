@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, Phone, Mail, Plus, Check, X, AlertCircle, CalendarDays } from 'lucide-react';
+import { Calendar, Clock, Phone, Mail, Plus, Check, X, AlertCircle, CalendarDays, Trash2 } from 'lucide-react';
 import api from '../api';
 
 const AdminBookings = () => {
@@ -10,6 +10,11 @@ const AdminBookings = () => {
         show: false,
         message: '',
         type: ''
+    });
+    const [deleteModal, setDeleteModal] = useState({
+        show: false,
+        eventTypeId: null,
+        eventTypeName: ''
     });
 
     useEffect(() => {
@@ -50,6 +55,31 @@ const AdminBookings = () => {
             showNotification('Failed to add event type.', 'error');
             console.error('Error adding event type:', error);
         }
+    };
+
+    const handleDeleteEventType = async (id) => {
+        try {
+            await api.delete(`/bookings/${id}`);
+            showNotification('Event type deleted successfully!', 'success');
+            setEventTypes(eventTypes.filter(eventType => eventType.id !== id));
+            setDeleteModal({ show: false, eventTypeId: null, eventTypeName: '' });
+        } catch (error) {
+            if (error.response && error.response.status === 400) {
+                showNotification('Cannot delete event type with associated bookings.', 'error');
+            } else {
+                showNotification('Failed to delete event type.', 'error');
+            }
+            console.error('Error deleting event type:', error);
+            setDeleteModal({ show: false, eventTypeId: null, eventTypeName: '' });
+        }
+    };
+
+    const openDeleteModal = (id, name) => {
+        setDeleteModal({
+            show: true,
+            eventTypeId: id,
+            eventTypeName: name
+        });
     };
 
     const handleBookingAction = async (id, action) => {
@@ -113,6 +143,9 @@ const AdminBookings = () => {
                                         <th className="px-6 py-3 text-right text-xs font-semibold text-amber-900">
                                             Fee
                                         </th>
+                                        <th className="px-6 py-3 text-right text-xs font-semibold text-amber-900">
+                                            Actions
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-amber-100">
@@ -121,6 +154,15 @@ const AdminBookings = () => {
                                             <td className="px-6 py-4 text-sm text-gray-900">{event.event_type}</td>
                                             <td className="px-6 py-4 text-sm text-gray-900 text-right">
                                                 {formatCurrency(event.fee)}
+                                            </td>
+                                            <td className="px-6 py-4 text-right">
+                                                <button
+                                                    onClick={() => openDeleteModal(event.id, event.event_type)}
+                                                    className="p-1.5 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
+                                                    title="Delete event type"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
                                             </td>
                                         </tr>
                                     ))}
@@ -173,7 +215,9 @@ const AdminBookings = () => {
                             </button>
                         </div>
                     </div>
-                </div>{/* Bookings Table */}
+                </div>
+                
+                {/* Bookings Table */}
                 <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
                     <div className="p-6 border-b border-amber-100">
                         <h2 className="text-xl font-semibold text-amber-900">All Bookings</h2>
@@ -279,65 +323,68 @@ const AdminBookings = () => {
                     </div>
                 </div>
 
-               {/* Notification */}
-{notification.show && (
-    <div className="fixed bottom-4 right-4 flex items-center">
-        <div className={`
-            px-6 py-3 rounded-lg shadow-lg flex items-center gap-2
-            ${notification.type === 'success' ? 'bg-green-500' : 'bg-red-500'}
-            text-white font-medium
-            transform transition-all duration-500 ease-out
-            animate-slide-in
-        `}>
-            {notification.type === 'success' ? (
-                <Check className="w-5 h-5" />
-            ) : (
-                <AlertCircle className="w-5 h-5" />
-            )}
-            {notification.message}
+                {/* Notification */}
+                {notification.show && (
+                    <div className="fixed bottom-4 right-4 flex items-center">
+                        <div className={`
+                            px-6 py-3 rounded-lg shadow-lg flex items-center gap-2
+                            ${notification.type === 'success' ? 'bg-green-500' : 'bg-red-500'}
+                            text-white font-medium
+                            transform transition-all duration-500 ease-out
+                            animate-slide-in
+                        `}>
+                            {notification.type === 'success' ? (
+                                <Check className="w-5 h-5" />
+                            ) : (
+                                <AlertCircle className="w-5 h-5" />
+                            )}
+                            {notification.message}
+                        </div>
+                    </div>
+                )}
+
+                {/* No Bookings State */}
+                {bookings.length === 0 && (
+                    <div className="bg-white rounded-2xl shadow-xl p-12 text-center">
+                        <CalendarDays className="w-16 h-16 text-amber-300 mx-auto mb-4" />
+                        <h3 className="text-xl font-semibold text-gray-900 mb-2">No Bookings Yet</h3>
+                        <p className="text-gray-600">
+                            There are no event bookings to display at the moment.
+                        </p>
+                    </div>
+                )}
+
+                {/* Delete Confirmation Modal */}
+                {deleteModal.show && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                        <div className="bg-white rounded-lg p-6 max-w-md w-full">
+                            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                                Delete Event Type
+                            </h3>
+                            <p className="text-gray-600 mb-6">
+                                Are you sure you want to delete <span className="font-semibold">{deleteModal.eventTypeName}</span>? 
+                                This action cannot be undone, and may fail if there are associated bookings.
+                            </p>
+                            <div className="flex justify-end gap-3">
+                                <button
+                                    onClick={() => setDeleteModal({ show: false, eventTypeId: null, eventTypeName: '' })}
+                                    className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={() => handleDeleteEventType(deleteModal.eventTypeId)}
+                                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                                >
+                                    Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
         </div>
-    </div>
-)}
-
-            {/* No Bookings State */}
-            {bookings.length === 0 && (
-                <div className="bg-white rounded-2xl shadow-xl p-12 text-center">
-                    <CalendarDays className="w-16 h-16 text-amber-300 mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">No Bookings Yet</h3>
-                    <p className="text-gray-600">
-                        There are no event bookings to display at the moment.
-                    </p>
-                </div>
-            )}
-        </div>
-    </div>
-);
-};
-
-// Custom utility function to format currency with RWF
-const formatCurrency = (amount) => {
-if (!amount) return 'RWF 0';
-return new Intl.NumberFormat('en-RW', {
-    style: 'currency',
-    currency: 'RWF',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0
-}).format(amount);
-};
-
-// Custom utility function to format dates
-const formatDate = (dateString) => {
-if (!dateString) return '';
-try {
-    return new Date(dateString).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    });
-} catch (error) {
-    console.error('Error formatting date:', error);
-    return dateString;
-}
+    );
 };
 
 export default AdminBookings;
